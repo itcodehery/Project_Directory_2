@@ -14,10 +14,16 @@ fn main() {
 fn command_handler(state: &mut State) {
     loop {
         let mut command: String = String::new();
+        eprint!("DIR2>");
         std::io::stdin().read_line(&mut command).unwrap();
         let command: String = command.trim().to_string();
-        if command == "dir2 exit" {
+        if command.to_uppercase() == "EXIT" || command.to_uppercase() == "/E" {
             break;
         }
+        if command.is_empty() {
+            continue;
+        }
+        let tokens = parse_command(&command);
+        println!("{:?}", tokens);
     }
 }
