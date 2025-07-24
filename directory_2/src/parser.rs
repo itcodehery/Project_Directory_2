@@ -5,12 +5,17 @@ pub enum Command {
     ViewState,
     ClearState,
     RunState,
+    MetaState,
     FindExact { filename: String },
     FavView,
     FavSet,
     FavRm { filename: String },
     RunFav { index: usize },
     Unknown { command: String },
+    DodgeDirectory,
+    WatchDirectory { directory: String },
+    ClearScreen,
+    Exit,
 }
 
 pub fn parse_command(input: &str) -> Result<Command, String> {
@@ -21,15 +26,24 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
     }
 
     return match tokens[0].to_uppercase().as_str() {
+        // Meta Commands
         "LC" | "LIST" | "LIST COMMANDS" => Ok(Command::ListCommands),
+        "EXIT" => Ok(Command::Exit),
+        "CLS" => Ok(Command::ClearScreen),
+        // Directory Commands
+        "DD" => Ok(Command::DodgeDirectory),
+        "WD" => parse_watch_directory(&tokens),
+        // STATE Commands
         "SELECT" => parse_select(&tokens),
         "VIEW" => parse_view(&tokens),
-        "CLEAR" => clear_view(&tokens),
-        "RUN" => parse_run(&tokens),
-        "RS" => parse_run(&tokens),
+        "DROP" => parse_drop_state(&tokens),
+        "RUN" | "RS" => parse_run(&tokens),
+        "META" => parse_meta_state(&tokens),
+        // Favorite Commands
         "RF" => parse_run(&tokens),
-        "FIND" => parse_find_exact(&tokens),
         "FAV" => parse_fav(&tokens),
+        // Search Commands
+        "FIND" => parse_find_exact(&tokens),
         _ => Ok(Command::Unknown {
             command: tokens[0].to_uppercase().clone(),
         }),
@@ -37,11 +51,8 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
 }
 
 fn tokenize(input: &str) -> Result<Vec<String>, String> {
-    // Initialize collections to store tokens and current token being built
     let mut tokens = Vec::new();
     let mut current_token = String::new();
-
-    // Track whether we're currently inside a quoted string
     let mut in_quotes = false;
 
     // Create peekable iterator over input characters
@@ -51,46 +62,42 @@ fn tokenize(input: &str) -> Result<Vec<String>, String> {
     // The peek() method lets you check if the next character is a whitespace
     // or special character before advancing the iterator.
 
-    // Process each character in the input string
     while let Some(ch) = chars.next() {
         match ch {
-            // Toggle quote state when encountering quote marks
             '"' => {
                 in_quotes = !in_quotes;
             }
-            // Handle whitespace characters
             ' ' | '\t' => {
                 if in_quotes {
-                    // Inside quotes, spaces are part of the token
                     current_token.push(ch);
                 } else if !current_token.is_empty() {
-                    // Outside quotes, spaces separate tokens
                     tokens.push(current_token.trim().to_string());
                     current_token.clear();
                 }
             }
-            // Add all other characters to current token
             _ => {
-                // Regular characters are added to the current token
                 current_token.push(ch);
             }
         }
     }
 
-    // Handle any remaining token after processing all characters
     if !current_token.is_empty() {
         tokens.push(current_token.trim().to_string());
     }
 
-    // Return error if quotes weren't properly closed
     if in_quotes {
         return Err("Unclosed quotes in command.".to_string());
     }
 
-    // Return the collected tokens
     return Ok(tokens);
 }
 
+fn parse_watch_directory(tokens: &[String]) -> Result<Command, String> {
+    if tokens.len() < 2 {
+        return Err("Expected <directory> AFTER WD".to_string());
+    }
+    Ok(Command::WatchDirectory { directory: tokens[1].clone() })
+}
 fn parse_select(tokens: &[String]) -> Result<Command, String> {
     if tokens.len() < 4 {
         return Err("SELECT requires: SELECT \"Filename\" FROM \"Directory\"".to_string());
@@ -102,7 +109,7 @@ fn parse_select(tokens: &[String]) -> Result<Command, String> {
     }
 
     Ok(Command::Select {
-        filename: tokens[1].clone(),
+        filename: parse_filename(tokens[1].clone()),
         directory: tokens[3].clone(),
     })
 }
@@ -127,32 +134,38 @@ fn parse_view(tokens: &[String]) -> Result<Command, String> {
     )
 }
 
-fn clear_view(tokens: &[String]) -> Result<Command, String> {
-    if tokens.len() == 1 && tokens[0].to_uppercase() == "CV" {
+fn parse_meta_state(tokens: &[String]) -> Result<Command, String> {
+    if tokens.len() < 2  && tokens[0].to_uppercase() == "MS" {
+        return Ok(Command::MetaState);
+    }
+    else if tokens.len() == 2 && tokens[0].to_uppercase() == "META" {
+        if tokens[1].to_uppercase() != "STATE" {
+            return Err("META requires: STATE keyword".to_string());
+        }
+        else {
+            return Ok(Command::MetaState);
+        }
+    }
+    else {
+        return Err("Unknown META or STATE keyword.".to_string());
+    }
+}
+
+fn parse_drop_state(tokens: &[String]) -> Result<Command, String> {
+    if tokens.len() == 1 && tokens[0].to_uppercase() == "DS" {
         return Ok(Command::ClearState);
     }
     if tokens.len() == 2
-        && tokens[0].to_uppercase() == "CLEAR"
-        && tokens[1].to_uppercase() == "VIEW"
+        && tokens[0].to_uppercase() == "DROP"
+        && tokens[1].to_uppercase() == "STATE"
     {
         return Ok(Command::ClearState);
     }
     Err(
-        "Expected CLEAR VIEW or CV. Type LC or LIST COMMANDS to view available commands."
+        "Expected DROP STATE or DS. Type LC or LIST COMMANDS to view available commands."
             .to_string(),
     )
 }
-
-// fn parse_run_state(tokens: &[String]) -> Result<Command, String> {
-//     if tokens.len() == 1 && tokens[0].to_uppercase() == "RS" {
-//         return Ok(Command::RunState);
-//     }
-//     if tokens.len() == 2 && tokens[0].to_uppercase() == "RUN" && tokens[1].to_uppercase() == "STATE"
-//     {
-//         return Ok(Command::RunState);
-//     }
-//     Err("Expected RUN STATE or RS".to_string())
-// }
 
 fn parse_find_exact(tokens: &[String]) -> Result<Command, String> {
     if tokens.len() == 2 && tokens[0].to_uppercase() == "FE" {
@@ -213,26 +226,6 @@ fn parse_fav(tokens: &[String]) -> Result<Command, String> {
         ),
     }
 }
-
-// fn parse_run_fav(tokens: &[String]) -> Result<Command, String> {
-//     if tokens.len() == 2 && tokens[0].to_uppercase() == "RF" {
-//         return Ok(Command::RunFav {
-//             index: tokens[1]
-//                 .to_string()
-//                 .parse::<usize>()
-//                 .expect("Invalid FAV index"),
-//         });
-//     }
-//     if tokens.len() == 3 && tokens[0].to_uppercase() == "RUN" && tokens[1].to_uppercase() == "FAV" {
-//         return Ok(Command::RunFav {
-//             index: tokens[1]
-//                 .to_string()
-//                 .parse::<usize>()
-//                 .expect("Invalid FAV index"),
-//         });
-//     }
-//     Err("Expected RUN FAV or RF".to_string())
-// }
 
 fn parse_run(tokens: &[String]) -> Result<Command, String> {
     // Pattern Matching based on Length of Tokens and First Token
