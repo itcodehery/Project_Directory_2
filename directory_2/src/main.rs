@@ -6,6 +6,7 @@ use parser::parse_command;
 struct State {
     state: Option<PathBuf>,
 }
+
 fn main() {
     let current_state: State = State { state: None };
     println!("\x1B[2J\x1B[1;1H");
@@ -33,6 +34,13 @@ fn command_handler() {
             continue;
         }
         let tokens = parse_command(&command);
-        println!("{:?}", tokens);
+        match tokens {
+            Ok(command) => {
+                println!("{:?}", command);
+            }
+            Err(error) => {
+                println!("Error: {}", error);
+            }
+        }
     }
 }

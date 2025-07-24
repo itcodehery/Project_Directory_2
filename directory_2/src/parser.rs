@@ -1,5 +1,6 @@
 #[derive(Debug)]
 pub enum Command {
+    ListCommands,
     Select { filename: String, directory: String },
     ViewState,
     ClearState,
@@ -20,6 +21,7 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
     }
 
     return match tokens[0].to_uppercase().as_str() {
+        "LC" | "LIST" | "LIST COMMANDS" => Ok(Command::ListCommands),
         "SELECT" => parse_select(&tokens),
         "VIEW" => parse_view(&tokens),
         "CLEAR" => clear_view(&tokens),
@@ -119,7 +121,10 @@ fn parse_view(tokens: &[String]) -> Result<Command, String> {
         return Ok(Command::ViewState);
     }
 
-    Err("Expected VIEW STATE or VS".to_string())
+    Err(
+        "Expected VIEW STATE or VS\nType LC or LIST COMMANDS to view available commands."
+            .to_string(),
+    )
 }
 
 fn clear_view(tokens: &[String]) -> Result<Command, String> {
@@ -132,7 +137,10 @@ fn clear_view(tokens: &[String]) -> Result<Command, String> {
     {
         return Ok(Command::ClearState);
     }
-    Err("Expected CLEAR VIEW or CV".to_string())
+    Err(
+        "Expected CLEAR VIEW or CV. Type LC or LIST COMMANDS to view available commands."
+            .to_string(),
+    )
 }
 
 // fn parse_run_state(tokens: &[String]) -> Result<Command, String> {
@@ -161,7 +169,10 @@ fn parse_find_exact(tokens: &[String]) -> Result<Command, String> {
             filename: parse_filename(tokens[2].clone()),
         });
     }
-    Err("Expected FIND EXACT or FE".to_string())
+    Err(
+        "Expected FIND EXACT or FE \"Filename\", Type LC or LIST COMMANDS to view available commands."
+            .to_string(),
+    )
 }
 
 fn parse_filename(token: String) -> String {
@@ -196,7 +207,10 @@ fn parse_fav(tokens: &[String]) -> Result<Command, String> {
                 filename: tokens[2].clone(),
             })
         }
-        _ => Err("Unknown FAV subcommand".to_string()),
+        _ => Err(
+            "Unknown FAV subcommand. Type LC or LIST COMMANDS to view available commands."
+                .to_string(),
+        ),
     }
 }
 
@@ -237,6 +251,8 @@ fn parse_run(tokens: &[String]) -> Result<Command, String> {
         (2, "RF") => Ok(Command::RunFav {
             index: tokens[1].parse::<usize>().expect("Invalid FAV index"),
         }),
-        _ => Err("Invalid RUN Command".to_string()),
+        _ => Err(
+            "Invalid RUN Command. Type LC or LIST COMMANDS to view available commands.".to_string(),
+        ),
     }
 }
