@@ -19,31 +19,21 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
         return Err("Emp".to_string());
     }
 
-    match tokens[0].to_uppercase().as_str() {
+    return match tokens[0].to_uppercase().as_str() {
         "SELECT" => parse_select(&tokens),
         "VIEW" => parse_view(&tokens),
         "CLEAR" => clear_view(&tokens),
-        "RUN" => match tokens[1].to_uppercase().as_str() {
-            "STATE" => parse_run_state(&tokens),
-            "FAV" => parse_run_fav(&tokens),
-            _ => Ok(Command::Unknown {
-                command: tokens[1].clone(),
-            }),
-        },
+        "RUN" => parse_run(&tokens),
+        "RS" => parse_run(&tokens),
+        "RF" => parse_run(&tokens),
         "FIND" => parse_find_exact(&tokens),
         "FAV" => parse_fav(&tokens),
         _ => Ok(Command::Unknown {
             command: tokens[0].to_uppercase().clone(),
         }),
     };
-
-    return Ok(Command::Unknown {
-        command: input.to_string(),
-    });
 }
 
-/// Splits an input string into tokens, handling quoted strings as single tokens
-/// Returns a Result containing either a vector of tokens or an error message
 fn tokenize(input: &str) -> Result<Vec<String>, String> {
     // Initialize collections to store tokens and current token being built
     let mut tokens = Vec::new();
@@ -145,16 +135,16 @@ fn clear_view(tokens: &[String]) -> Result<Command, String> {
     Err("Expected CLEAR VIEW or CV".to_string())
 }
 
-fn parse_run_state(tokens: &[String]) -> Result<Command, String> {
-    if tokens.len() == 1 && tokens[0].to_uppercase() == "RS" {
-        return Ok(Command::RunState);
-    }
-    if tokens.len() == 2 && tokens[0].to_uppercase() == "RUN" && tokens[1].to_uppercase() == "STATE"
-    {
-        return Ok(Command::RunState);
-    }
-    Err("Expected RUN STATE or RS".to_string())
-}
+// fn parse_run_state(tokens: &[String]) -> Result<Command, String> {
+//     if tokens.len() == 1 && tokens[0].to_uppercase() == "RS" {
+//         return Ok(Command::RunState);
+//     }
+//     if tokens.len() == 2 && tokens[0].to_uppercase() == "RUN" && tokens[1].to_uppercase() == "STATE"
+//     {
+//         return Ok(Command::RunState);
+//     }
+//     Err("Expected RUN STATE or RS".to_string())
+// }
 
 fn parse_find_exact(tokens: &[String]) -> Result<Command, String> {
     if tokens.len() == 2 && tokens[0].to_uppercase() == "FE" {
@@ -210,22 +200,43 @@ fn parse_fav(tokens: &[String]) -> Result<Command, String> {
     }
 }
 
-fn parse_run_fav(tokens: &[String]) -> Result<Command, String> {
-    if tokens.len() == 2 && tokens[0].to_uppercase() == "RF" {
-        return Ok(Command::RunFav {
-            index: tokens[1]
-                .to_string()
-                .parse::<usize>()
-                .expect("Invalid FAV index"),
-        });
+// fn parse_run_fav(tokens: &[String]) -> Result<Command, String> {
+//     if tokens.len() == 2 && tokens[0].to_uppercase() == "RF" {
+//         return Ok(Command::RunFav {
+//             index: tokens[1]
+//                 .to_string()
+//                 .parse::<usize>()
+//                 .expect("Invalid FAV index"),
+//         });
+//     }
+//     if tokens.len() == 3 && tokens[0].to_uppercase() == "RUN" && tokens[1].to_uppercase() == "FAV" {
+//         return Ok(Command::RunFav {
+//             index: tokens[1]
+//                 .to_string()
+//                 .parse::<usize>()
+//                 .expect("Invalid FAV index"),
+//         });
+//     }
+//     Err("Expected RUN FAV or RF".to_string())
+// }
+
+fn parse_run(tokens: &[String]) -> Result<Command, String> {
+    // Pattern Matching based on Length of Tokens and First Token
+    match (tokens.len(), tokens[0].to_uppercase().as_str()) {
+        (2, "RUN") => match tokens[1].to_uppercase().as_str() {
+            "STATE" => Ok(Command::RunState),
+            _ => Err("Expected RUN STATE or RF".to_string()),
+        },
+        (3, "RUN") => match tokens[1].to_uppercase().as_str() {
+            "FAV" => Ok(Command::RunFav {
+                index: tokens[2].parse::<usize>().expect("Invalid FAV index"),
+            }),
+            _ => Err("Expected RUN FAV <index> or RF <index>".to_string()),
+        },
+        (1, "RS") => Ok(Command::RunState),
+        (2, "RF") => Ok(Command::RunFav {
+            index: tokens[1].parse::<usize>().expect("Invalid FAV index"),
+        }),
+        _ => Err("Invalid RUN Command".to_string()),
     }
-    if tokens.len() == 3 && tokens[0].to_uppercase() == "RUN" && tokens[1].to_uppercase() == "FAV" {
-        return Ok(Command::RunFav {
-            index: tokens[1]
-                .to_string()
-                .parse::<usize>()
-                .expect("Invalid FAV index"),
-        });
-    }
-    Err("Expected RUN FAV or RF".to_string())
 }

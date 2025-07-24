@@ -7,11 +7,16 @@ struct State {
     state: Option<PathBuf>,
 }
 fn main() {
-    let mut current_state: State = State { state: None };
-    command_handler(&mut current_state);
+    let current_state: State = State { state: None };
+    println!("\x1B[2J\x1B[1;1H");
+    println!("------------------------");
+    println!("Welcome to DIR2");
+    println!("------------------------");
+    println!("Current State: {:?}", current_state.state);
+    command_handler();
 }
 
-fn command_handler(state: &mut State) {
+fn command_handler() {
     loop {
         let mut command: String = String::new();
         eprint!("DIR2>");
@@ -19,6 +24,10 @@ fn command_handler(state: &mut State) {
         let command: String = command.trim().to_string();
         if command.to_uppercase() == "EXIT" || command.to_uppercase() == "/E" {
             break;
+        }
+        if command.to_uppercase() == "CLS" || command.to_uppercase() == "/C" {
+            println!("\x1B[2J\x1B[1;1H");
+            continue;
         }
         if command.is_empty() {
             continue;
