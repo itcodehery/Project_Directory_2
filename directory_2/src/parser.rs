@@ -27,15 +27,15 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
 
     return match tokens[0].to_uppercase().as_str() {
         // Meta Commands
-        "LC" | "LIST" | "LIST COMMANDS" => Ok(Command::ListCommands),
-        "EXIT" => Ok(Command::Exit),
-        "CLS" => Ok(Command::ClearScreen),
+        "LC"=> Ok(Command::ListCommands),
+        "EXIT" | "/E" => Ok(Command::Exit),
+        "CLS" | "/C"=> Ok(Command::ClearScreen),
         // Directory Commands
         "DD" => Ok(Command::DodgeDirectory),
-        "WD" => parse_watch_directory(&tokens),
+        "WD"=> parse_watch_directory(&tokens),
         // STATE Commands
         "SELECT" => parse_select(&tokens),
-        "VIEW" => parse_view(&tokens),
+        "VIEW" | "VS" => parse_view(&tokens),
         "DROP" => parse_drop_state(&tokens),
         "RUN" | "RS" => parse_run(&tokens),
         "META" => parse_meta_state(&tokens),
@@ -43,7 +43,7 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
         "RF" => parse_run(&tokens),
         "FAV" => parse_fav(&tokens),
         // Search Commands
-        "FIND" => parse_find_exact(&tokens),
+        "FIND" | "FE" => parse_find_exact(&tokens),
         _ => Ok(Command::Unknown {
             command: tokens[0].to_uppercase().clone(),
         }),
@@ -135,19 +135,16 @@ fn parse_view(tokens: &[String]) -> Result<Command, String> {
 }
 
 fn parse_meta_state(tokens: &[String]) -> Result<Command, String> {
-    if tokens.len() < 2  && tokens[0].to_uppercase() == "MS" {
-        return Ok(Command::MetaState);
-    }
-    else if tokens.len() == 2 && tokens[0].to_uppercase() == "META" {
+    return if tokens.len() < 2 && tokens[0].to_uppercase() == "MS" {
+        Ok(Command::MetaState)
+    } else if tokens.len() == 2 && tokens[0].to_uppercase() == "META" {
         if tokens[1].to_uppercase() != "STATE" {
-            return Err("META requires: STATE keyword".to_string());
+            Err("META requires: STATE keyword".to_string())
+        } else {
+            Ok(Command::MetaState)
         }
-        else {
-            return Ok(Command::MetaState);
-        }
-    }
-    else {
-        return Err("Unknown META or STATE keyword.".to_string());
+    } else {
+        Err("Unknown META or STATE keyword.".to_string())
     }
 }
 
