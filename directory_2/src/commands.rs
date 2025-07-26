@@ -1,10 +1,13 @@
+use std::path::PathBuf;
+use crate::file_system_state::FileSystemState;
+use crate::filesystem::{is_dir, is_dir_empty, is_dir_the_root, resolve_and_normalize};
 use crate::parser::Command;
 
-pub fn execute_command(command:Command) -> Result<String, String> {
+pub fn execute_command(command:Command, file_system_state: &mut FileSystemState) -> Result<String, String> {
     match command {
         Command::ListCommands => execute_list_all_cmd(),
         Command::DodgeDirectory => {
-            return Ok(String::from("Executed: Dodge Directory"))
+            execute_dodge_directory(file_system_state)
         },
         Command::WatchDirectory { directory: _directory } => {
             return Ok(String::from("Executed: Watch Directory"))
@@ -18,7 +21,8 @@ pub fn execute_command(command:Command) -> Result<String, String> {
             return Ok(String::from("Executed: Select"))
         },
         Command::ViewState => {
-            return Ok(String::from("Executed: View State"))
+            execute_view_state(file_system_state)
+            // return Ok(String::from("Executed: View State"))
         },
         Command::MetaState => {
             return Ok(String::from("Executed: Meta State"))
@@ -79,3 +83,35 @@ pub fn execute_list_all_cmd() ->Result<String, String>{
 
     Ok("Executed: List Commands".to_string())
 }
+
+pub fn execute_dodge_directory(sys_state: &mut FileSystemState) -> Result<String, String> {
+    let current_path = sys_state.get_current_path();
+    let base_directory = std::env::current_dir().unwrap();
+    // Check if the path is a directory or a file
+    if !is_dir(current_path) {
+        return Err(String::from("Not a Directory"))
+    }
+    // Check if the directory is the root
+    if is_dir_the_root(current_path) {
+        return Err(String::from("Cannot Dodge Root Directory"))
+    }
+    sys_state.set_current_directory(current_path.parent().unwrap().to_path_buf());
+    Ok(String::from("Executed: Dodge Directory"))
+    // return Err(String::from("Can't execute Dodge Directory"));
+}
+
+pub fn execute_view_state(sys_state: &mut FileSystemState) -> Result<String, String> {
+    let current_path = sys_state.get_current_path();
+    let current_state = sys_state.get_current_state();
+
+    println!("Current STATE:\nState: {:?}", current_state);
+    println!("Base directory: {:?}", current_path);
+
+    return Ok(String::from("Executed View State!"));
+}
+
+// pub fn execute_watch_directory(sys_state: &mut FileSystemState) -> Result<String, String> {
+//     let current_path = sys_state.get_current_path();
+//
+//
+// }

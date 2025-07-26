@@ -1,6 +1,7 @@
 use std::env;
 use std::path::PathBuf;
 
+#[derive(Debug)]
 pub struct FileSystemState {
     state: Option<PathBuf>,
     current_path: PathBuf,

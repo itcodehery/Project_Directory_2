@@ -13,16 +13,12 @@ use parser::parse_command;
 use file_system_state::FileSystemState;
 use crate::commands::execute_command;
 
-struct State {
-    state: Option<PathBuf>,
-}
-
 fn main() {
     // Dependency Injection of the State Variable
-    let current_file_sys_state: FileSystemState = FileSystemState::new();
+    let mut current_file_sys_state: FileSystemState = FileSystemState::new();
     println!("\x1B[2J\x1B[1;1H");
     terminal_boilerplate(&current_file_sys_state);
-    command_handler(&current_file_sys_state);
+    command_handler(&mut current_file_sys_state);
 }
 
 fn terminal_boilerplate(sys_state: &FileSystemState) {
@@ -33,10 +29,10 @@ fn terminal_boilerplate(sys_state: &FileSystemState) {
     println!("Current Directory: {:?}", sys_state.get_current_path());
 }
 
-fn command_handler(sys_state: &FileSystemState) {
+fn command_handler(sys_state: &mut FileSystemState) {
     loop {
         let mut command: String = String::new();
-        eprint!("DIR2>");
+        eprint!("DIR2>{:?}:",sys_state.get_current_path());
         std::io::stdin().read_line(&mut command).unwrap();
         let command: String = command.trim().to_string();
         if command.is_empty() {
@@ -45,11 +41,11 @@ fn command_handler(sys_state: &FileSystemState) {
         let tokens = parse_command(&command);
         match tokens {
             Ok(command) => {
-                // println!("{:?}", command);
-                let res = execute_command(command);
-                if res.unwrap().to_uppercase() == "exited!" {
+                let res = execute_command(command, sys_state);
+                if res.unwrap().to_uppercase() == "EXITED!" {
                     break;
                 }
+
             }
             Err(error) => {
                 println!("Error: {}", error);
