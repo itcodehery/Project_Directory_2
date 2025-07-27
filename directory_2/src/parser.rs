@@ -1,3 +1,5 @@
+use colored::Colorize;
+
 #[derive(Debug)]
 pub enum Command {
     ListCommands,
@@ -14,6 +16,7 @@ pub enum Command {
     Unknown { command: String },
     DodgeDirectory,
     WatchDirectory { directory: String },
+    ListDirectory,
     ClearScreen,
     Exit,
 }
@@ -33,10 +36,11 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
         // Directory Commands
         "DD" => Ok(Command::DodgeDirectory),
         "WD"=> parse_watch_directory(&tokens),
+        "LD" => parse_list_directory(&tokens),
         // STATE Commands
         "SELECT" => parse_select(&tokens),
         "VIEW" | "VS" => parse_view(&tokens),
-        "DROP" => parse_drop_state(&tokens),
+        "DROP" | "DS" => parse_drop_state(&tokens),
         "RUN" | "RS" => parse_run(&tokens),
         "META" => parse_meta_state(&tokens),
         // Favorite Commands
@@ -44,9 +48,7 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
         "FAV" => parse_fav(&tokens),
         // Search Commands
         "FIND" | "FE" => parse_find_exact(&tokens),
-        _ => Ok(Command::Unknown {
-            command: tokens[0].to_uppercase().clone(),
-        }),
+        _ => parse_unknown(&tokens),
     };
 }
 
@@ -86,7 +88,7 @@ fn tokenize(input: &str) -> Result<Vec<String>, String> {
     }
 
     if in_quotes {
-        return Err("Unclosed quotes in command.".to_string());
+        return Err("Unclosed quotes in command.".red().to_string());
     }
 
     return Ok(tokens);
@@ -94,18 +96,34 @@ fn tokenize(input: &str) -> Result<Vec<String>, String> {
 
 fn parse_watch_directory(tokens: &[String]) -> Result<Command, String> {
     if tokens.len() < 2 {
-        return Err("Expected <directory> AFTER WD".to_string());
+        return Err("Expected <directory> AFTER WD".red().to_string());
     }
-    Ok(Command::WatchDirectory { directory: tokens[1].clone() })
+
+    let directory = if tokens.len() == 2 {
+        // Single token, parse normally
+        parse_filename(tokens[1].clone())
+    } else {
+        // Multiple tokens, join them with spaces
+        tokens[1..].join(" ")
+    };
+
+    Ok(Command::WatchDirectory { directory })
+}
+
+fn parse_list_directory(tokens: &[String]) -> Result<Command, String> {
+    if tokens.len() > 1 {
+        return Err("Expected no arguments with LD Command".red().to_string());
+    }
+    return Ok(Command::ListDirectory);
 }
 fn parse_select(tokens: &[String]) -> Result<Command, String> {
     if tokens.len() < 4 {
-        return Err("SELECT requires: SELECT \"Filename\" FROM \"Directory\"".to_string());
+        return Err("SELECT requires: SELECT \"Filename\" FROM \"Directory\"".red().to_string());
     }
 
     // Check for FROM keyword
     if tokens[2].to_lowercase() != "from" {
-        return Err("Expected FROM keyword after file name.".to_string());
+        return Err("Expected FROM keyword after file name.".red().to_string());
     }
 
     Ok(Command::Select {
@@ -119,10 +137,10 @@ fn parse_view(tokens: &[String]) -> Result<Command, String> {
         return Ok(Command::ViewState);
     }
     if tokens.len() != 2 {
-        return Err("VIEW requires: STATE keyword".to_string());
+        return Err("VIEW requires: STATE keyword".red().to_string());
     }
     if tokens[1].to_uppercase() != "STATE" {
-        return Err("VIEW requires: STATE keyword".to_string());
+        return Err("VIEW requires: STATE keyword".red().to_string());
     }
     if tokens[0].to_uppercase() == "VIEW" && tokens[1].to_uppercase() == "STATE" {
         return Ok(Command::ViewState);
@@ -130,7 +148,7 @@ fn parse_view(tokens: &[String]) -> Result<Command, String> {
 
     Err(
         "Expected VIEW STATE or VS\nType LC or LIST COMMANDS to view available commands."
-            .to_string(),
+            .red().to_string(),
     )
 }
 
@@ -139,12 +157,12 @@ fn parse_meta_state(tokens: &[String]) -> Result<Command, String> {
         Ok(Command::MetaState)
     } else if tokens.len() == 2 && tokens[0].to_uppercase() == "META" {
         if tokens[1].to_uppercase() != "STATE" {
-            Err("META requires: STATE keyword".to_string())
+            Err("META requires: STATE keyword".red().to_string())
         } else {
             Ok(Command::MetaState)
         }
     } else {
-        Err("Unknown META or STATE keyword.".to_string())
+        Err("Unknown META or STATE keyword.".red().to_string())
     }
 }
 
@@ -160,7 +178,7 @@ fn parse_drop_state(tokens: &[String]) -> Result<Command, String> {
     }
     Err(
         "Expected DROP STATE or DS. Type LC or LIST COMMANDS to view available commands."
-            .to_string(),
+            .red().to_string(),
     )
 }
 
@@ -181,7 +199,7 @@ fn parse_find_exact(tokens: &[String]) -> Result<Command, String> {
     }
     Err(
         "Expected FIND EXACT or FE \"Filename\", Type LC or LIST COMMANDS to view available commands."
-            .to_string(),
+            .red().to_string(),
     )
 }
 
@@ -197,7 +215,7 @@ fn parse_filename(token: String) -> String {
 
 fn parse_fav(tokens: &[String]) -> Result<Command, String> {
     if tokens.len() < 2 {
-        return Err("FAV requires a subcommand (VIEW, SET, RM)".to_string());
+        return Err("FAV requires a subcommand (VIEW, SET, RM)".red().to_string());
     }
 
     match tokens[1].to_uppercase().as_str() {
@@ -206,12 +224,12 @@ fn parse_fav(tokens: &[String]) -> Result<Command, String> {
             if tokens.len() >= 3 && tokens[2].to_uppercase() == "STATE" {
                 Ok(Command::FavSet)
             } else {
-                Err("Expected FAV SET STATE".to_string())
+                Err("Expected FAV SET STATE".red().to_string())
             }
         }
         "RM" => {
             if tokens.len() < 3 {
-                return Err("FAV RM requires a filename".to_string());
+                return Err("FAV RM requires a filename".red().to_string());
             }
             Ok(Command::FavRm {
                 filename: tokens[2].clone(),
@@ -219,7 +237,7 @@ fn parse_fav(tokens: &[String]) -> Result<Command, String> {
         }
         _ => Err(
             "Unknown FAV subcommand. Type LC or LIST COMMANDS to view available commands."
-                .to_string(),
+                .red().to_string(),
         ),
     }
 }
@@ -229,20 +247,25 @@ fn parse_run(tokens: &[String]) -> Result<Command, String> {
     match (tokens.len(), tokens[0].to_uppercase().as_str()) {
         (2, "RUN") => match tokens[1].to_uppercase().as_str() {
             "STATE" => Ok(Command::RunState),
-            _ => Err("Expected RUN STATE or RF".to_string()),
+            _ => Err("Expected RUN STATE or RF".red().to_string()),
         },
         (3, "RUN") => match tokens[1].to_uppercase().as_str() {
             "FAV" => Ok(Command::RunFav {
                 index: tokens[2].parse::<usize>().expect("Invalid FAV index"),
             }),
-            _ => Err("Expected RUN FAV <index> or RF <index>".to_string()),
+            _ => Err("Expected RUN FAV <index> or RF <index>".red().to_string()),
         },
         (1, "RS") => Ok(Command::RunState),
         (2, "RF") => Ok(Command::RunFav {
-            index: tokens[1].parse::<usize>().expect("Invalid FAV index"),
+            index: tokens[1].parse::<usize>().expect("Invalid FAV index".red().to_string().as_str()),
         }),
         _ => Err(
-            "Invalid RUN Command. Type LC or LIST COMMANDS to view available commands.".to_string(),
+            "Invalid RUN Command. Type LC or LIST COMMANDS to view available commands.".red().to_string(),
         ),
     }
+}
+
+fn parse_unknown(tokens: &[String]) -> Result<Command, String> {
+    println!("Unknown command. Type {} to view.", "LC or LIST COMMANDS".yellow().to_string());
+    return Ok(Command::Unknown { command: tokens[0].to_uppercase()})
 }

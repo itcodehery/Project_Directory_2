@@ -63,6 +63,7 @@ pub fn is_executable(path: &PathBuf) -> bool {
     }
 }
 
+#[derive(Debug)]
 pub struct FileInfo {
     pub size: u64,
     pub modified: Option<SystemTime>,
@@ -90,6 +91,13 @@ pub fn list_dir_contents(path: &Path) -> io::Result<Vec<DirEntry>> {
         .collect();
 
     Ok(entries)
+}
+
+pub fn get_directory_without_parent(path: &Path) -> String {
+    let parent = path.parent().unwrap();
+    let path = path.to_string_lossy();
+    let path = path.replace(parent.to_str().unwrap(),  "");
+    return path.replace("\\","");
 }
 
 pub fn is_dir_the_root(path: &Path) -> bool {

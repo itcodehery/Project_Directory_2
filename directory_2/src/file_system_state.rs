@@ -28,6 +28,7 @@ impl FileSystemState {
     }
 
     pub fn set_current_directory(&mut self, new_path: PathBuf) {
+        std::env::set_current_dir(&new_path).unwrap_or_else(|_| self.state = None);
         self.current_path = new_path;
     }
 
