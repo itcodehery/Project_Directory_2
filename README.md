@@ -1,7 +1,10 @@
-## Directory 2.0 - SQL-Inspired File System Interface
 
-A Rust-based file system that reimagines file interaction through SQL-like commands. Navigate, select, and execute files using familiar database query syntax.
+![DIR2 Banner](images/clean_banner.png)
+## dir2 (Directory 2.0) — An SQL-Inspired File System Interface for Windows
 
+A Rust-based file system / terminal that reimagines file interaction through SQL-like commands. Navigate, select, and execute files using familiar database query syntax.
+
+![DIR2 Home](images/main.png)
 **Key Features:**
 
 - **SQL-style file selection**: `SELECT "script.py" FROM ~/projects/` to load files into state
@@ -14,9 +17,12 @@ Transform your command-line file management from traditional navigation to intui
 
 **Example Usage:**
 
-```
-SELECT "main.rs" FROM ~/my-project/src/
-RUN STATE
-```
+![DIR2 Select Example](images/select_example.png)
+
+**List of Commands Implemented (v0.1 Pre-Alpha):**
+
+![DIR2 Commands List](images/commands_list.png)
 
 ---
+
+![DIR2 End Banner](images/end_banner.png)
