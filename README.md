@@ -2,7 +2,9 @@
 ![DIR2 Banner](images/clean_banner.png)
 ## dir2 (Directory 2.0) — An SQL-Inspired File System Interface for Windows
 
-A Rust-based file system / terminal that reimagines file interaction through SQL-like commands. Navigate, select, and execute files using familiar database query syntax.
+A Rust-based file system / 
+
+terminal that reimagines file interaction through SQL-like commands. Navigate, select, and execute files using familiar database query syntax.
 
 ![DIR2 Home](images/main.png)
 **Key Features:**

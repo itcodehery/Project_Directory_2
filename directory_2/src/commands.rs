@@ -1,9 +1,11 @@
 use std::path::{Path, PathBuf};
 use colored::Colorize;
+use rust_search::similarity_sort;
 use crate::file_system_state::FileSystemState;
 use crate::filesystem;
 use crate::filesystem::{get_directory_without_parent, get_file_metadata, is_dir, is_dir_the_root, is_executable};
 use crate::parser::Command;
+use crate::search::search_builder;
 
 pub fn execute_command(command:Command, file_system_state: &mut FileSystemState) -> Result<String, String> {
     match command {
@@ -38,7 +40,8 @@ pub fn execute_command(command:Command, file_system_state: &mut FileSystemState)
             // return Ok(String::from("Executed: Meta State"))
         },
         Command::FindExact { filename: _filename } => {
-            return Ok(String::from("Executed: Find Exact"))
+            execute_find_exact(file_system_state, &_filename)
+            // return Ok(String::from("Executed: Find Exact"))
         },
         Command::RunState => {
             execute_run_state(file_system_state)
@@ -95,6 +98,7 @@ pub fn execute_list_all_cmd() ->Result<String, String> {
         ("META STATE | MS", "To view current STATE File Metadata"),
         ("FIND EXACT <query> | FE <query>", "Finds file by performing a system-wide search and stores it in the STATE"),
         ("RUN STATE | RS", "Runs the file or script present in the current STATE"),
+        ("DROP STATE | DS", "Drops the current STATE"),
     ].iter().cloned().collect();
 
     let fav_commands: HashMap<&str, &str> = [
@@ -103,6 +107,8 @@ pub fn execute_list_all_cmd() ->Result<String, String> {
         ("FAV RM <filename>", "Removes <filename> from favorites"),
         ("RUN FAV <index>", "Runs the file at the index of the Favorites list"),
     ].iter().cloned().collect();
+
+    let search_engine_commands: HashMap<&str, &str> = [].iter().cloned().collect();
 
     println!("\n{}\n{}", titles_list[0], titles_list[1]);
     println!("{}",titles_list[2]);
@@ -174,10 +180,12 @@ pub fn execute_select(sys_state: &mut FileSystemState, filename: String, directo
     };
 
     if !filesystem::path_exists(&dir_path) {
-        return Err(format!("Directory {} does not exist!", directory));
+        println!("Directory {} does not exist!", directory.bright_red());
+        return Ok(format!("Directory {} does not exist!", directory));
     }
     if !filesystem::is_dir(&dir_path) {
-        return Err(format!("Directory {} is not a directory!", directory));
+        println!("{} is not a directory!", directory.bright_red());
+        return Ok(format!("Directory {} is not a directory!", directory));
     }
 
     sys_state.set_current_directory(dir_path.clone());
@@ -185,10 +193,12 @@ pub fn execute_select(sys_state: &mut FileSystemState, filename: String, directo
     let file_path = dir_path.join(&filename);
 
     if !filesystem::path_exists(&file_path) {
-        return Err(format!("File {} does not exist in Directory {}!", file_path.display(), directory));
+        println!("File {} does not exist in Directory!", file_path.display().to_string().bright_red());
+        return Ok(format!("File {} does not exist in Directory {}!", file_path.display(), directory));
     }
     if !filesystem::is_file(&file_path) {
-        return Err(format!("File {} is not a file!", file_path.display()));
+        println!("{} is not a file!", file_path.display().to_string().bright_red());
+        return Ok(format!("File {} is not a file!", file_path.display()));
     }
     sys_state.set_current_state(file_path.clone());
 
@@ -288,7 +298,19 @@ pub fn execute_meta_state(sys_state: &mut FileSystemState) -> Result<String, Str
         return Ok(String::from("STATE is Empty!"));
     }
     else {
-        println!("\n{}\n {:?}", "STATE Metadata:".yellow(), get_file_metadata(current_state.as_ref().unwrap()));
+        println!("\n{}\n {:?}", "STATE Metadata:".yellow(), get_file_metadata(current_state.as_ref().unwrap()).unwrap());
         return Ok(String::from("Executed: STATE Metadata"));
     }
+}
+
+pub fn execute_find_exact(sys_state: &mut FileSystemState, query: &String) -> Result<String, String> {
+    let current_state = sys_state.get_current_state();
+
+    let mut search =  search_builder(sys_state, query);
+    similarity_sort(&mut search,&query);
+    for i in search_builder(sys_state, query) {
+        println!("\n{:?}", i);
+    }
+
+    return Ok(String::from("Finished search!"));
 }
