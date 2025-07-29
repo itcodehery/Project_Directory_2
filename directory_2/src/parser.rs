@@ -1,5 +1,7 @@
 use colored::Colorize;
 
+use crate::search::{SearchEngine};
+
 #[derive(Debug)]
 pub enum Command {
     ListCommands,
@@ -9,6 +11,7 @@ pub enum Command {
     RunState,
     MetaState,
     FindExact { filename: String },
+    Search { engine: SearchEngine, filename: String },
     FavView,
     FavSet,
     FavRm { filename: String },
@@ -48,6 +51,7 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
         "FAV" => parse_fav(&tokens),
         // Search Commands
         "FIND" | "FE" => parse_find_exact(&tokens),
+        "SEARCH" | "S" => parse_search(&tokens),
         _ => parse_unknown(&tokens),
     };
 }
@@ -201,6 +205,32 @@ fn parse_find_exact(tokens: &[String]) -> Result<Command, String> {
         "Expected FIND EXACT or FE \"Filename\", Type LC or LIST COMMANDS to view available commands."
             .red().to_string(),
     )
+}
+
+fn  parse_search(tokens: &[String]) -> Result<Command,String> {
+    if tokens.len() != 3 {
+        return Err("SEARCH Expected three arguments!".red().to_string());
+    }
+    if tokens[0].to_lowercase() == "search" || tokens[0].to_lowercase() == "s" {
+        return match tokens[1].clone().to_lowercase().as_str() {
+            "google" | "g" => {
+                Ok(Command::Search {engine: SearchEngine::Google, filename: parse_filename(tokens[2].clone())})
+            },
+            "duckduckgo" | "d" => {
+                Ok(Command::Search {engine: SearchEngine::DuckDuckGo, filename: parse_filename(tokens[2].clone())})
+            }
+            "chatgpt" | "c" => {
+                Ok(Command::Search {engine: SearchEngine::ChatGPT, filename: parse_filename(tokens[2].clone())})
+            },
+            "perplexity" | "p" => {
+                Ok(Command::Search {engine: SearchEngine::Perplexity, filename: parse_filename(tokens[2].clone())})
+            }
+            &_ => {
+                println!("{} > Unknown search engine: {}", "ERROR".red() ,tokens[1].to_string());
+                Ok(Command::Unknown { command: parse_filename(tokens[1].clone()) }) }
+        }
+    }
+    Err("Invalid SEARCH Command. Run LIST COMMANDS or LC to view available commands.".red().to_string())
 }
 
 fn parse_filename(token: String) -> String {

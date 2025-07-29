@@ -17,6 +17,8 @@ terminal that reimagines file interaction through SQL-like commands. Navigate, s
 
 Transform your command-line file management from traditional navigation to intuitive querying. Perfect for developers who think in SQL and want a more declarative approach to file system operations.
 
+Uses the `rust_search` module for system-wide search integration for Windows.
+
 **Example Usage:**
 
 ![DIR2 Select Example](images/select_example.png)

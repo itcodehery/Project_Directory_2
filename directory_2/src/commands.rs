@@ -1,11 +1,13 @@
+use std::fmt::Debug;
 use std::path::{Path, PathBuf};
 use colored::Colorize;
+
 use rust_search::similarity_sort;
 use crate::file_system_state::FileSystemState;
 use crate::filesystem;
 use crate::filesystem::{get_directory_without_parent, get_file_metadata, is_dir};
 use crate::parser::Command;
-use crate::search::search_builder;
+use crate::search::{search_builder, SearchEngine};
 
 pub fn execute_command(command:Command, file_system_state: &mut FileSystemState) -> Result<String, String> {
     match command {
@@ -43,6 +45,9 @@ pub fn execute_command(command:Command, file_system_state: &mut FileSystemState)
             execute_find_exact(file_system_state, &_filename)
             // return Ok(String::from("Executed: Find Exact"))
         },
+        Command::Search {engine, filename: _filename} => {
+            execute_search(&engine,&_filename)
+        }
         Command::RunState => {
             execute_run_state(file_system_state)
             // return Ok(String::from("Executed: Run State"))
@@ -81,6 +86,7 @@ pub fn execute_list_all_cmd() ->Result<String, String> {
         "Meta Commands:",
         "State Commands:",
         "Favorites Commands:",
+        "Search Commands:",
         "---------------------",
     ];
 
@@ -93,12 +99,11 @@ pub fn execute_list_all_cmd() ->Result<String, String> {
     ].iter().cloned().collect();
 
     let state_commands: HashMap<&str, &str> = [
-        ("SELECT <filename.ext> FROM <directory>", "Sets <filename.ext> file as current STATE"),
         ("VIEW STATE | VS", "To view current STATE"),
         ("META STATE | MS", "To view current STATE File Metadata"),
-        ("FIND EXACT <query> | FE <query>", "Finds file by performing a system-wide search and stores it in the STATE"),
         ("RUN STATE | RS", "Runs the file or script present in the current STATE"),
         ("DROP STATE | DS", "Drops the current STATE"),
+        ("SELECT <filename.ext> FROM <directory>", "Sets <filename.ext> file as current STATE"),
     ].iter().cloned().collect();
 
     let fav_commands: HashMap<&str, &str> = [
@@ -108,7 +113,14 @@ pub fn execute_list_all_cmd() ->Result<String, String> {
         ("RUN FAV <index>", "Runs the file at the index of the Favorites list"),
     ].iter().cloned().collect();
 
-    let search_engine_commands: HashMap<&str, &str> = [].iter().cloned().collect();
+    let search_engine_commands: HashMap<&str, &str> = [
+        ("SEARCH CHATGPT <query> | S C <query>","Performs a query to ChatGPT using the query."),
+        ("SEARCH PERPLEXITY <query> | S P <query>","Performs a query to Claude using the query."),
+        ("FIND EXACT <query> | FE <query>", "Performs a System-wide File search on the Query, returns the list of Directories."),
+        ("SEARCH GOOGLE <query> | S G <query>", "Performs a Web Query using Google as the search engine."),
+        ("SEARCH DDG <query> | S D <query>","Performs a Web Query using DuckDuckGo as the search engine."),
+
+    ].iter().cloned().collect();
 
     println!("\n{}\n{}", titles_list[0], titles_list[1]);
     println!("{}",titles_list[2]);
@@ -122,6 +134,11 @@ pub fn execute_list_all_cmd() ->Result<String, String> {
     println!("\n{}",titles_list[4]);
     for command in fav_commands.keys() {
         println!("{} : {}", command.bright_green(), fav_commands[command]);
+    }
+
+    println!("\n{}",titles_list[5]);
+    for command in search_engine_commands.keys() {
+        println!("{} : {}", command.bright_purple(), search_engine_commands[command]);
     }
     println!("\n");
 
@@ -298,7 +315,12 @@ pub fn execute_meta_state(sys_state: &mut FileSystemState) -> Result<String, Str
         return Ok(String::from("STATE is Empty!"));
     }
     else {
-        println!("\n{}\n {:?}", "STATE Metadata:".yellow(), get_file_metadata(current_state.as_ref().unwrap()).unwrap());
+        let metadata = get_file_metadata(current_state.as_ref().unwrap()).expect("ERROR > Failed to get metadata");
+        println!("\nCurrent STATE: {}",current_state.clone().unwrap().to_str().unwrap());
+        println!("\n{}", "STATE Metadata:".yellow());
+        println!("\nFile Size: {}",metadata.size.to_string());
+        println!("\nLast Modified: {:?}", metadata.modified.unwrap());
+        println!("\nRead Only: {}\n",metadata.is_readonly.to_string());
         return Ok(String::from("Executed: STATE Metadata"));
     }
 }
@@ -320,4 +342,35 @@ pub fn execute_find_exact(sys_state: &mut FileSystemState, query: &String) -> Re
     }
 
     return Ok(String::from("Finished search!"));
+}
+
+pub fn execute_search(engine: &SearchEngine, query: &String) -> Result<String, String> {
+
+    return match engine {
+        SearchEngine::Google => {
+            println!("\n{}: Searching using {}...", query.yellow(), engine.to_string());
+            open::that(PathBuf::from(format!("https://www.google.com/search?q={}", query.as_str()))).expect("Couldn't launch Google!");
+            Ok(format!("Opened '{}' with Google", query.as_str()))
+        },
+        SearchEngine::DuckDuckGo => {
+            println!("\n{}: Searching using {}...", query.yellow(), engine.to_string());
+            open::that(PathBuf::from(format!("https://duckduckgo.com/?t=ffab&q={}", query.as_str()))).expect("Couldn't launch DuckDuckGo!");
+            Ok(format!("Opened '{}' with DuckDuckGo", query.as_str()))
+        },
+        SearchEngine::Perplexity => {
+            println!("\n{}: Searching using {}...", query.yellow(), engine.to_string());
+            open::that(PathBuf::from(format!("https://www.perplexity.ai/search?q={}", query.as_str()))).expect("Couldn't launch Perplexity!");
+            Ok(format!("Opened '{}' with Perplexity", query.as_str()))
+        },
+        SearchEngine::ChatGPT => {
+            println!("\n{}: Searching using {}...", query.yellow(), engine.to_string());
+            open::that(PathBuf::from(format!("https://chatgpt.com/?q={}", query.as_str()))).expect("Couldn't launch ChatGPT!");
+            Ok(format!("Opened '{}' with Perplexity", query.as_str()))
+        }
+        _ => {
+            println!("\n{} > Unknown search engine: {}...","ERROR".red(), engine.to_string());
+            Ok(format!("Error: Unknown search engine: {}", engine.to_string().red()))
+        }
+    }
+
 }
