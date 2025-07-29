@@ -3,7 +3,7 @@ use colored::Colorize;
 use rust_search::similarity_sort;
 use crate::file_system_state::FileSystemState;
 use crate::filesystem;
-use crate::filesystem::{get_directory_without_parent, get_file_metadata, is_dir, is_dir_the_root, is_executable};
+use crate::filesystem::{get_directory_without_parent, get_file_metadata, is_dir};
 use crate::parser::Command;
 use crate::search::search_builder;
 
@@ -307,9 +307,16 @@ pub fn execute_find_exact(sys_state: &mut FileSystemState, query: &String) -> Re
     let current_state = sys_state.get_current_state();
 
     let mut search =  search_builder(sys_state, query);
-    similarity_sort(&mut search,&query);
-    for i in search_builder(sys_state, query) {
-        println!("\n{:?}", i);
+    if !search.is_empty() {
+        println!("\n{}: Found '{}' at these directories:","FIND EXACT".yellow(),query.yellow().to_string());
+        similarity_sort(&mut search,&query);
+        for (index,str) in search.iter().enumerate() {
+            println!("\n{}> {}", (index + 1).to_string().bright_blue(), str);
+        }
+        println!("\n");
+    }
+    else {
+        println!("\n{}: No matches found! Try switching root directories.","FIND EXACT".yellow());
     }
 
     return Ok(String::from("Finished search!"));
