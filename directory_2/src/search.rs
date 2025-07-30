@@ -1,4 +1,4 @@
-use rust_search::SearchBuilder;
+use rust_search::{similarity_sort, SearchBuilder};
 use crate::file_system_state::FileSystemState;
 
 #[derive(Debug)]
@@ -20,8 +20,9 @@ impl SearchEngine {
     }
 }
 pub fn search_builder(sys_state: &mut FileSystemState, query_string : &str, ) -> Vec<String>  {
-    let search: Vec<String> = SearchBuilder::default()
+    let mut search: Vec<String> = SearchBuilder::default()
         .location("/").search_input(query_string).limit(10).hidden().build().collect();
+    similarity_sort(&mut search,query_string);
 
     return search;
 }

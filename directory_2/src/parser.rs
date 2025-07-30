@@ -1,25 +1,44 @@
 use colored::Colorize;
 
-use crate::search::{SearchEngine};
+use crate::search::SearchEngine;
 
 #[derive(Debug)]
 pub enum Command {
     ListCommands,
-    Select { filename: String, directory: String },
+    Select {
+        filename: String,
+        directory: String,
+    },
     ViewState,
     ClearState,
     RunState,
     MetaState,
-    FindExact { filename: String },
-    Search { engine: SearchEngine, filename: String },
+    FindExact {
+        filename: String,
+    },
+    Search {
+        engine: SearchEngine,
+        filename: String,
+    },
     FavView,
     FavSet,
-    FavRm { filename: String },
-    RunFav { index: usize },
-    Unknown { command: String },
+    FavRm {
+        index: usize,
+    },
+    RunFav {
+        index: usize,
+    },
+    Unknown {
+        command: String,
+    },
     DodgeDirectory,
-    WatchDirectory { directory: String },
+    WatchDirectory {
+        directory: String,
+    },
     ListDirectory,
+    ChangeDrive {
+        drive: String,
+    },
     ClearScreen,
     Exit,
 }
@@ -33,13 +52,14 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
 
     return match tokens[0].to_uppercase().as_str() {
         // Meta Commands
-        "LC"=> Ok(Command::ListCommands),
+        "LC" => Ok(Command::ListCommands),
         "EXIT" | "/E" => Ok(Command::Exit),
-        "CLS" | "/C"=> Ok(Command::ClearScreen),
+        "CLS" | "/C" => Ok(Command::ClearScreen),
         // Directory Commands
         "DD" => Ok(Command::DodgeDirectory),
-        "WD"=> parse_watch_directory(&tokens),
+        "WD" => parse_watch_directory(&tokens),
         "LD" => parse_list_directory(&tokens),
+        "CD" => parse_change_drive(&tokens),
         // STATE Commands
         "SELECT" => parse_select(&tokens),
         "VIEW" | "VS" => parse_view(&tokens),
@@ -55,6 +75,8 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
         _ => parse_unknown(&tokens),
     };
 }
+
+
 
 fn tokenize(input: &str) -> Result<Vec<String>, String> {
     let mut tokens = Vec::new();
@@ -120,9 +142,19 @@ fn parse_list_directory(tokens: &[String]) -> Result<Command, String> {
     }
     return Ok(Command::ListDirectory);
 }
+
+fn parse_change_drive(tokens: &Vec<String>) -> Result<Command, String> {
+    if tokens.len() != 2 {
+        return Err("Expected CD <drive>".to_string())
+    }
+    return Ok(Command::ChangeDrive {drive: tokens[1].to_uppercase()});
+
+}
 fn parse_select(tokens: &[String]) -> Result<Command, String> {
     if tokens.len() < 4 {
-        return Err("SELECT requires: SELECT \"Filename\" FROM \"Directory\"".red().to_string());
+        return Err("SELECT requires: SELECT \"Filename\" FROM \"Directory\""
+            .red()
+            .to_string());
     }
 
     // Check for FROM keyword
@@ -151,8 +183,9 @@ fn parse_view(tokens: &[String]) -> Result<Command, String> {
     }
 
     Err(
-        "Expected VIEW STATE or VS\nType LC or LIST COMMANDS to view available commands."
-            .red().to_string(),
+        "Expected VIEW STATE or VS\nType LC to viewa list of available commands."
+            .red()
+            .to_string(),
     )
 }
 
@@ -167,7 +200,7 @@ fn parse_meta_state(tokens: &[String]) -> Result<Command, String> {
         }
     } else {
         Err("Unknown META or STATE keyword.".red().to_string())
-    }
+    };
 }
 
 fn parse_drop_state(tokens: &[String]) -> Result<Command, String> {
@@ -181,8 +214,9 @@ fn parse_drop_state(tokens: &[String]) -> Result<Command, String> {
         return Ok(Command::ClearState);
     }
     Err(
-        "Expected DROP STATE or DS. Type LC or LIST COMMANDS to view available commands."
-            .red().to_string(),
+        "Expected DROP STATE or DS. Type LC to view a list available commands."
+            .red()
+            .to_string(),
     )
 }
 
@@ -202,35 +236,50 @@ fn parse_find_exact(tokens: &[String]) -> Result<Command, String> {
         });
     }
     Err(
-        "Expected FIND EXACT or FE \"Filename\", Type LC or LIST COMMANDS to view available commands."
+        "Expected FIND EXACT or FE \"Filename\", Type LC to view a list of available commands."
             .red().to_string(),
     )
 }
 
-fn  parse_search(tokens: &[String]) -> Result<Command,String> {
+fn parse_search(tokens: &[String]) -> Result<Command, String> {
     if tokens.len() != 3 {
         return Err("SEARCH Expected three arguments!".red().to_string());
     }
     if tokens[0].to_lowercase() == "search" || tokens[0].to_lowercase() == "s" {
         return match tokens[1].clone().to_lowercase().as_str() {
-            "google" | "g" => {
-                Ok(Command::Search {engine: SearchEngine::Google, filename: parse_filename(tokens[2].clone())})
-            },
-            "duckduckgo" | "d" => {
-                Ok(Command::Search {engine: SearchEngine::DuckDuckGo, filename: parse_filename(tokens[2].clone())})
-            }
-            "chatgpt" | "c" => {
-                Ok(Command::Search {engine: SearchEngine::ChatGPT, filename: parse_filename(tokens[2].clone())})
-            },
-            "perplexity" | "p" => {
-                Ok(Command::Search {engine: SearchEngine::Perplexity, filename: parse_filename(tokens[2].clone())})
-            }
+            "google" | "g" => Ok(Command::Search {
+                engine: SearchEngine::Google,
+                filename: parse_filename(tokens[2].clone()),
+            }),
+            "ddg" | "d" => Ok(Command::Search {
+                engine: SearchEngine::DuckDuckGo,
+                filename: parse_filename(tokens[2].clone()),
+            }),
+            "chatgpt" | "c" => Ok(Command::Search {
+                engine: SearchEngine::ChatGPT,
+                filename: parse_filename(tokens[2].clone()),
+            }),
+            "perplexity" | "p" => Ok(Command::Search {
+                engine: SearchEngine::Perplexity,
+                filename: parse_filename(tokens[2].clone()),
+            }),
             &_ => {
-                println!("{} > Unknown search engine: {}", "ERROR".red() ,tokens[1].to_string());
-                Ok(Command::Unknown { command: parse_filename(tokens[1].clone()) }) }
-        }
+                println!(
+                    "{} > Unknown search engine: {}",
+                    "ERROR".red(),
+                    tokens[1].to_string()
+                );
+                Ok(Command::Unknown {
+                    command: parse_filename(tokens[1].clone()),
+                })
+            }
+        };
     }
-    Err("Invalid SEARCH Command. Run LIST COMMANDS or LC to view available commands.".red().to_string())
+    Err(
+        "Invalid SEARCH Command. Run LIST COMMANDS or LC to view available commands."
+            .red()
+            .to_string(),
+    )
 }
 
 fn parse_filename(token: String) -> String {
@@ -245,7 +294,9 @@ fn parse_filename(token: String) -> String {
 
 fn parse_fav(tokens: &[String]) -> Result<Command, String> {
     if tokens.len() < 2 {
-        return Err("FAV requires a subcommand (VIEW, SET, RM)".red().to_string());
+        return Err("FAV requires a subcommand (VIEW, SET, RM)"
+            .red()
+            .to_string());
     }
 
     match tokens[1].to_uppercase().as_str() {
@@ -259,15 +310,21 @@ fn parse_fav(tokens: &[String]) -> Result<Command, String> {
         }
         "RM" => {
             if tokens.len() < 3 {
-                return Err("FAV RM requires a filename".red().to_string());
+                return Err("FAV RM requires an index".red().to_string());
             }
             Ok(Command::FavRm {
-                filename: tokens[2].clone(),
+                index: match tokens[2].parse::<usize>() {
+                    Ok(idx) => idx,
+                    Err(_) => {
+                        println!("{}: Index out of bounds!","ERROR".red());
+                        return Ok(Command::Unknown {command:"Invalid Fav Index".to_string()}); }
+                },
             })
         }
         _ => Err(
-            "Unknown FAV subcommand. Type LC or LIST COMMANDS to view available commands."
-                .red().to_string(),
+            "Unknown FAV subcommand. Type LC to view a list of available commands."
+                .red()
+                .to_string(),
         ),
     }
 }
@@ -281,21 +338,35 @@ fn parse_run(tokens: &[String]) -> Result<Command, String> {
         },
         (3, "RUN") => match tokens[1].to_uppercase().as_str() {
             "FAV" => Ok(Command::RunFav {
-                index: tokens[2].parse::<usize>().expect("Invalid FAV index"),
+                index: match tokens[2].parse::<usize>() {
+                    Ok(idx) => idx,
+                    Err(_) => {
+                        println!("ERROR: Index out of bounds!");
+                        return Ok(Command::Unknown {command:"Invalid Fav Index".to_string()}); }
+                },
             }),
             _ => Err("Expected RUN FAV <index> or RF <index>".red().to_string()),
         },
         (1, "RS") => Ok(Command::RunState),
         (2, "RF") => Ok(Command::RunFav {
-            index: tokens[1].parse::<usize>().expect("Invalid FAV index".red().to_string().as_str()),
+            index: tokens[1]
+                .parse::<usize>()
+                .expect("Invalid FAV index".red().to_string().as_str()),
         }),
         _ => Err(
-            "Invalid RUN Command. Type LC or LIST COMMANDS to view available commands.".red().to_string(),
+            "Invalid RUN Command. Type LC to view a list of available commands."
+                .red()
+                .to_string(),
         ),
     }
 }
 
 fn parse_unknown(tokens: &[String]) -> Result<Command, String> {
-    println!("Unknown command. Type {} to view.", "LC or LIST COMMANDS".yellow().to_string());
-    return Ok(Command::Unknown { command: tokens[0].to_uppercase()})
+    println!(
+        "Unknown command. Type {} to view a list of available commands.",
+        "LC".yellow().to_string()
+    );
+    return Ok(Command::Unknown {
+        command: tokens[0].to_uppercase(),
+    });
 }
