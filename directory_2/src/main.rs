@@ -1,19 +1,19 @@
 use std::path::PathBuf;
 
-mod parser;
+mod commands;
+mod config;
+mod favorites;
 mod file_system_state;
 mod filesystem;
 mod indexing;
-mod commands;
-mod config;
+mod parser;
 mod search;
-mod favorites;
 
-use colored::Colorize;
-use parser::parse_command;
-use file_system_state::FileSystemState;
 use crate::commands::execute_command;
+use colored::Colorize;
 use favorites::FavoritesManager;
+use file_system_state::FileSystemState;
+use parser::parse_command;
 fn main() {
     // Dependency Injection of the State Variable
     let mut current_file_sys_state: FileSystemState = FileSystemState::new();
@@ -25,16 +25,23 @@ fn main() {
 
 fn terminal_boilerplate(sys_state: &FileSystemState) {
     println!("------------------------");
-    println!("{} for Windows\nInstall the latest DIR2 for new features and improvements!", "DIR2".green());
+    println!(
+        "{} for Windows\nInstall the latest DIR2 for new features and improvements!",
+        "DIR2".green()
+    );
     println!("------------------------");
     println!("Current State: {:?}", sys_state.get_current_state());
-    println!("Current Directory: {}\n", sys_state.get_current_path().to_string_lossy());
+    // println!("Current Directory: {}\n", sys_state.get_current_path().to_string_lossy());
 }
 
 fn command_handler(sys_state: &mut FileSystemState, favorites_manager: &mut FavoritesManager) {
     loop {
         let mut command: String = String::new();
-        eprint!("{}{}>","DIR2@".green(),trim_quotes(sys_state.get_current_path()).to_string_lossy());
+        eprint!(
+            "{}{}>",
+            "DIR2@".green(),
+            trim_quotes(sys_state.get_current_path()).to_string_lossy()
+        );
         std::io::stdin().read_line(&mut command).unwrap();
         let command: String = command.trim().to_string();
         if command.is_empty() {
@@ -47,7 +54,6 @@ fn command_handler(sys_state: &mut FileSystemState, favorites_manager: &mut Favo
                 if res.unwrap().to_uppercase() == "EXITED!" {
                     break;
                 }
-
             }
             Err(error) => {
                 println!("Error: {}", error);
@@ -57,7 +63,8 @@ fn command_handler(sys_state: &mut FileSystemState, favorites_manager: &mut Favo
 }
 
 fn trim_quotes(path: &PathBuf) -> PathBuf {
-    let cleaned = path.to_string_lossy()
+    let cleaned = path
+        .to_string_lossy()
         .chars()
         .filter(|&c| c != '"')
         .collect::<String>();

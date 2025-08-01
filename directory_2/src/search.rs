@@ -1,8 +1,8 @@
-use rust_search::{similarity_sort, SearchBuilder};
-use crate::file_system_state::FileSystemState;
+// use crate::file_system_state::FileSystemState;
+use rust_search::{SearchBuilder, similarity_sort};
 
 #[derive(Debug)]
-pub enum SearchEngine{
+pub enum SearchEngine {
     Google,
     DuckDuckGo,
     ChatGPT,
@@ -10,7 +10,7 @@ pub enum SearchEngine{
 }
 
 impl SearchEngine {
-    pub fn to_string(&self) -> String{
+    pub fn to_string(&self) -> String {
         match self {
             &SearchEngine::Google => String::from("Google"),
             &SearchEngine::DuckDuckGo => String::from("DuckDuckGo"),
@@ -19,10 +19,15 @@ impl SearchEngine {
         }
     }
 }
-pub fn search_builder(sys_state: &mut FileSystemState, query_string : &str, ) -> Vec<String>  {
+pub fn search_builder(query_string: &str) -> Vec<String> {
     let mut search: Vec<String> = SearchBuilder::default()
-        .location("/").search_input(query_string).limit(10).hidden().build().collect();
-    similarity_sort(&mut search,query_string);
+        .location("/")
+        .search_input(query_string)
+        .limit(10)
+        .hidden()
+        .build()
+        .collect();
+    similarity_sort(&mut search, query_string);
 
     return search;
 }

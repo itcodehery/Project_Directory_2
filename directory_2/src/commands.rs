@@ -1,18 +1,18 @@
 use colored::Colorize;
 use std::path::{Path, PathBuf};
 
+use crate::favorites::{Favorite, FavoritesManager};
 use crate::file_system_state::FileSystemState;
 use crate::filesystem;
 use crate::filesystem::{get_directory_without_parent, get_file_metadata, is_dir};
 use crate::parser::Command;
 use crate::search::{SearchEngine, search_builder};
 use rust_search::similarity_sort;
-use crate::favorites::{Favorite, FavoritesManager};
 
 pub fn execute_command(
     command: Command,
     file_system_state: &mut FileSystemState,
-    favorites_manager: &mut FavoritesManager
+    favorites_manager: &mut FavoritesManager,
 ) -> Result<String, String> {
     match command {
         Command::ListCommands => execute_list_all_cmd(),
@@ -21,10 +21,13 @@ pub fn execute_command(
             directory: _directory,
         } => execute_watch_directory(file_system_state, &_directory),
         Command::ListDirectory => execute_list_directory(file_system_state),
-        Command::ChangeDrive {drive: _drive} => execute_change_drive(file_system_state, _drive),
+        Command::ChangeDrive { drive: _drive } => execute_change_drive(file_system_state, _drive),
         Command::ClearScreen => {
             // Windows-specific
-            std::process::Command::new("cmd").args(["/c", "cls"]).status().ok();
+            std::process::Command::new("cmd")
+                .args(["/c", "cls"])
+                .status()
+                .ok();
             return Ok(String::from("Executed: Clear Screen"));
         }
         Command::Exit => Ok("exited!".to_string()),
@@ -47,7 +50,7 @@ pub fn execute_command(
         Command::FindExact {
             filename: _filename,
         } => {
-            execute_find_exact(file_system_state, &_filename)
+            execute_find_exact(&_filename)
             // return Ok(String::from("Executed: Find Exact"))
         }
         Command::Search {
@@ -59,31 +62,31 @@ pub fn execute_command(
             // return Ok(String::from("Executed: Run State"))
         }
         Command::FavView => {
-            execute_fav_view(file_system_state,favorites_manager)
+            execute_fav_view(favorites_manager)
             // return Ok(String::from("Executed: Fav View"))
-        },
-        Command::FavRm { index: _index } => {
-            execute_remove_fav(_index, favorites_manager)
-        },
+        }
+        Command::FavRm { index: _index } => execute_remove_fav(_index, favorites_manager),
         Command::FavSet => {
-            execute_fav_set(file_system_state,favorites_manager)
+            execute_fav_set(file_system_state, favorites_manager)
             // return Ok(String::from("Executed: Fav Set"))
-        },
+        }
         Command::RunFav { index: _index } => {
             execute_run_fav(_index, favorites_manager)
             // return Ok(String::from("Executed: Run Fav"))
-        },
+        }
         Command::Unknown { command } => {
             return Ok(String::from(format!(
                 "Unexecuted: Unknown command {}",
                 command
             )));
         }
-
     }
 }
 
-pub fn execute_change_drive(file_system_state: &mut FileSystemState, drive: String) -> Result<String, String> {
+pub fn execute_change_drive(
+    file_system_state: &mut FileSystemState,
+    drive: String,
+) -> Result<String, String> {
     // Validate drive letter format
     let drive_upper = drive.to_uppercase();
 
@@ -105,19 +108,24 @@ pub fn execute_change_drive(file_system_state: &mut FileSystemState, drive: Stri
     // Check if the drive exists
     let path = std::path::Path::new(&drive_path);
     if !path.exists() {
-        return Err(format!("Drive {} does not exist or is not accessible", drive_char));
+        return Err(format!(
+            "Drive {} does not exist or is not accessible",
+            drive_char
+        ));
     }
 
     // Change to the drive
     match std::env::set_current_dir(&drive_path) {
         Ok(_) => {
             // Update your file system state's current directory
-            file_system_state.set_current_directory(std::env::current_dir()
-                .map_err(|e| format!("Failed to get current directory: {}", e))?);
+            file_system_state.set_current_directory(
+                std::env::current_dir()
+                    .map_err(|e| format!("Failed to get current directory: {}", e))?,
+            );
 
             Ok(format!("Changed to drive {}", drive_char))
-        },
-        Err(e) => Err(format!("Failed to change to drive {}: {}", drive_char, e))
+        }
+        Err(e) => Err(format!("Failed to change to drive {}: {}", drive_char, e)),
     }
 }
 
@@ -142,29 +150,50 @@ pub fn execute_list_all_cmd() -> Result<String, String> {
     ];
 
     let state_commands = [
-        ("SELECT <filename.ext> FROM <directory>", "Sets <filename.ext> file as current STATE"),
+        (
+            "SELECT <filename.ext> FROM <directory>",
+            "Sets <filename.ext> file as current STATE",
+        ),
         ("VIEW STATE | VS", "To view current STATE"),
         ("DROP STATE | DS", "Drops the current STATE"),
         ("META STATE | MS", "To view current STATE File Metadata"),
-        ("RUN STATE | RS", "Runs the file or script present in the current STATE"),
+        (
+            "RUN STATE | RS",
+            "Runs the file or script present in the current STATE",
+        ),
     ];
 
     let search_commands = [
-        ("FIND EXACT <query> | FE <query>", "Performs a System-wide File search on the Query, returns the list of Directories."),
-        ("SEARCH GOOGLE <query> | S G <query>", "Performs a Web Query using Google as the search engine."),
-        ("SEARCH DDG <query> | S D <query>", "Performs a Web Query using DuckDuckGo as the search engine."),
-        ("SEARCH CHATGPT <query> | S C <query>", "Performs a query to ChatGPT using the query."),
-        ("SEARCH PERPLEXITY <query> | S P <query>", "Performs a query to Perplexity using the query."),
-
-
+        (
+            "FIND EXACT <query> | FE <query>",
+            "Performs a System-wide File search on the Query, returns the list of Directories.",
+        ),
+        (
+            "SEARCH GOOGLE <query> | S G <query>",
+            "Performs a Web Query using Google as the search engine.",
+        ),
+        (
+            "SEARCH DDG <query> | S D <query>",
+            "Performs a Web Query using DuckDuckGo as the search engine.",
+        ),
+        (
+            "SEARCH CHATGPT <query> | S C <query>",
+            "Performs a query to ChatGPT using the query.",
+        ),
+        (
+            "SEARCH PERPLEXITY <query> | S P <query>",
+            "Performs a query to Perplexity using the query.",
+        ),
     ];
     let fav_commands = [
         ("FAV VIEW", "View all Favorites as a List"),
         ("FAV RM <index>", "Removes <filename> from favorites"),
         ("FAV SET STATE", "Sets current state as latest favorite"),
-        ("RUN FAV <index>", "Runs the file at the index of the Favorites list"),
+        (
+            "RUN FAV <index>",
+            "Runs the file at the index of the Favorites list",
+        ),
     ];
-
 
     println!("\n{}\n{}", titles[0], titles[1]);
 
@@ -216,8 +245,6 @@ pub fn execute_dodge_directory(sys_state: &mut FileSystemState) -> Result<String
     }
     // Err(String::from("Cannot navigate to parent directory"))
 }
-
-
 
 pub fn execute_select(
     sys_state: &mut FileSystemState,
@@ -291,7 +318,6 @@ pub fn execute_run_state(sys_state: &mut FileSystemState) -> Result<String, Stri
     return Ok(String::from("Running"));
 }
 pub fn execute_file(file_path: &PathBuf) -> Result<String, String> {
-
     // Validate file still exists and is executable
     if !filesystem::path_exists(file_path) {
         println!(
@@ -411,10 +437,21 @@ pub fn execute_list_directory(sys_state: &mut FileSystemState) -> Result<String,
     if !is_dir(current_path) {
         return Err(String::from("Not a Directory"));
     } else {
-        println!("Contents of current directory: {}", current_path.to_str().unwrap().yellow());
-        for (index, entry) in current_path.read_dir().expect("read_dir call failed").enumerate() {
+        println!(
+            "Contents of current directory: {}",
+            current_path.to_str().unwrap().yellow()
+        );
+        for (index, entry) in current_path
+            .read_dir()
+            .expect("read_dir call failed")
+            .enumerate()
+        {
             if let Ok(entry) = entry {
-                println!("{}\t> {}", index.to_string().bright_blue() ,get_directory_without_parent(&*entry.path()));
+                println!(
+                    "{}\t> {}",
+                    index.to_string().bright_blue(),
+                    get_directory_without_parent(&*entry.path())
+                );
             }
         }
         println!("\n");
@@ -435,7 +472,10 @@ pub fn execute_meta_state(sys_state: &mut FileSystemState) -> Result<String, Str
             current_state.clone().unwrap().to_str().unwrap()
         );
         println!("\n{}", "STATE Metadata:".yellow());
-        println!("File Name: {}", current_state.clone().unwrap().to_str().unwrap());
+        println!(
+            "File Name: {}",
+            current_state.clone().unwrap().to_str().unwrap()
+        );
         println!("File Size: {}", metadata.size.to_string());
         println!("Last Modified: {:?}", metadata.modified.unwrap());
         println!("Read Only: {}\n", metadata.is_readonly.to_string());
@@ -443,13 +483,10 @@ pub fn execute_meta_state(sys_state: &mut FileSystemState) -> Result<String, Str
     }
 }
 
-pub fn execute_find_exact(
-    sys_state: &mut FileSystemState,
-    query: &String,
-) -> Result<String, String> {
-    let current_state = sys_state.get_current_state();
+pub fn execute_find_exact(query: &String) -> Result<String, String> {
+    // let current_state = sys_state.get_current_state();
 
-    let mut search = search_builder(sys_state, query);
+    let mut search = search_builder(query);
     if !search.is_empty() {
         println!(
             "\n{}: Found '{}' at these directories:",
@@ -524,18 +561,17 @@ pub fn execute_search(engine: &SearchEngine, query: &String) -> Result<String, S
             )))
             .expect("Couldn't launch ChatGPT!");
             Ok(format!("Opened '{}' with Perplexity", query.as_str()))
-        }
-        _ => {
-            println!(
-                "\n{} > Unknown search engine: {}...",
-                "ERROR".red(),
-                engine.to_string()
-            );
-            Ok(format!(
-                "Error: Unknown search engine: {}",
-                engine.to_string().red()
-            ))
-        }
+        } // _ => {
+          //     println!(
+          //         "\n{} > Unknown search engine: {}...",
+          //         "ERROR".red(),
+          //         engine.to_string()
+          //     );
+          //     Ok(format!(
+          //         "Error: Unknown search engine: {}",
+          //         engine.to_string().red()
+          //     ))
+          // }
     };
 }
 
@@ -543,54 +579,92 @@ pub fn execute_search(engine: &SearchEngine, query: &String) -> Result<String, S
 // ---------------------FAVORITES------------------------
 // ------------------------------------------------------
 
-pub fn execute_fav_view(file_system_state: &mut FileSystemState, favorites_manager: &mut FavoritesManager) -> Result<String,String> {
+pub fn execute_fav_view(favorites_manager: &mut FavoritesManager) -> Result<String, String> {
     let states = favorites_manager.get_all();
     if states.is_empty() {
-        println!("No favorites found! Add a favorite by using {}","FAV SET STATE".yellow());
-        return Ok(String::from("No matches found! Try switching root directories."));
+        println!(
+            "No favorites found! Add a favorite by using {}",
+            "FAV SET STATE".yellow()
+        );
+        return Ok(String::from(
+            "No matches found! Try switching root directories.",
+        ));
     }
     println!("\nFavorites List:");
-    for (index,state) in states.iter().enumerate() {
-        println!("{}: {} > {} ",index.to_string().bright_blue(), state.get_alias_name().yellow(),state.get_path().to_string_lossy())
+    for (index, state) in states.iter().enumerate() {
+        println!(
+            "{}: {} > {} ",
+            index.to_string().bright_blue(),
+            state.get_alias_name().yellow(),
+            state.get_path().to_string_lossy()
+        )
     }
     return Ok(String::from("Done!"));
 }
 
-pub fn execute_fav_set(file_system_state: &mut FileSystemState, favorites_manager: &mut FavoritesManager) -> Result<String,String> {
-    let current_state = file_system_state.get_current_state().clone().expect("Couldn't get current state");
-    let favs =favorites_manager.get_all();
+pub fn execute_fav_set(
+    file_system_state: &mut FileSystemState,
+    favorites_manager: &mut FavoritesManager,
+) -> Result<String, String> {
+    let current_state = file_system_state
+        .get_current_state()
+        .clone()
+        .expect("Couldn't get current state");
+    let favs = favorites_manager.get_all();
     if favs.is_empty() {
         let new_fav = Favorite::from(current_state.clone());
-        favorites_manager.add(new_fav).expect("Couldn't add favorites to Favorites Manager!");
-        println!("Added STATE {} to Favorites. Use FAV VIEW to view Favorites list.",current_state.display().to_string().yellow());
+        favorites_manager
+            .add(new_fav)
+            .expect("Couldn't add favorites to Favorites Manager!");
+        println!(
+            "Added STATE {} to Favorites. Use FAV VIEW to view Favorites list.",
+            current_state.display().to_string().yellow()
+        );
         return Ok(String::from("Completed FAV SET"));
     }
     if favs.len() + 1 > 10 {
         println!("ERROR: Favorites List is full! (Max Favorites = 10)");
         return Ok(String::from("FAV SET TOO_MANY!"));
-    }
-    else {
+    } else {
         let new_fav = Favorite::from(current_state.clone());
-        favorites_manager.add(new_fav).expect("Couldn't add favorites to Favorite Manager!");
-        println!("Added STATE {} to Favorites Manager!",current_state.display());
+        favorites_manager
+            .add(new_fav)
+            .expect("Couldn't add favorites to Favorite Manager!");
+        println!(
+            "Added STATE {} to Favorites Manager!",
+            current_state.display()
+        );
         return Ok(String::from("Completed FAV SET"));
     }
 }
 
-fn execute_run_fav(index: usize ,favorites_manager: &mut FavoritesManager) -> Result<String, String> {
-    let fav = favorites_manager.get_by_index(index).expect("Couldn't get favorite");
+fn execute_run_fav(
+    index: usize,
+    favorites_manager: &mut FavoritesManager,
+) -> Result<String, String> {
+    let fav = favorites_manager
+        .get_by_index(index)
+        .expect("Couldn't get favorite");
 
     execute_file(fav.get_path())
 }
 
-fn execute_remove_fav(index: usize ,favorites_manager: &mut FavoritesManager) -> Result<String, String> {
+fn execute_remove_fav(
+    index: usize,
+    favorites_manager: &mut FavoritesManager,
+) -> Result<String, String> {
     if favorites_manager.is_empty() || index >= favorites_manager.len() {
         println!("ERROR: Index out of bounds!");
-        return Ok(String::from("Invalid index!"))
+        return Ok(String::from("Invalid index!"));
     }
     match favorites_manager.remove(index) {
         Ok(_) => println!("Removed favorite from FavoritesManager!"),
-        Err(msg) => return Err(format!("Failed to remove favorite from FavoritesManager: {}", msg)),
+        Err(msg) => {
+            return Err(format!(
+                "Failed to remove favorite from FavoritesManager: {}",
+                msg
+            ));
+        }
     };
 
     return Ok("Removed favorites from Favorite Manager!".to_string());
