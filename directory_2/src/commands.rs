@@ -603,6 +603,7 @@ pub fn execute_fav_view(favorites_manager: &mut FavoritesManager) -> Result<Stri
             state.get_path().to_string_lossy()
         )
     }
+    println!("\nUse {} to run Favorite at index.","RUN FAV <index> or RF <index>".yellow());
     return Ok(String::from("Done!"));
 }
 
