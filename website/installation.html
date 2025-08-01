@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Installation Guide - dir2 Documentation</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>dir2</h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a href="installation.html" class="nav-link active">Installation</a>
+                </li>
+                <li class="nav-item">
+                    <a href="usage.html" class="nav-link">Usage</a>
+                </li>
+                <li class="nav-item">
+                    <a href="commands.html" class="nav-link">Commands</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <h1 class="page-title">Installation Guide</h1>
+            <p class="page-subtitle">Get dir2 up and running on your Windows system in just a few steps</p>
+        </div>
+    </header>
+
+    <section class="content-section">
+        <div class="content-grid">
+            <aside class="sidebar">
+                <nav class="sidebar-nav">
+                    <h3>On This Page</h3>
+                    <ul>
+                        <li><a href="#prerequisites">Prerequisites</a></li>
+                        <li><a href="#rust-installation">Install Rust</a></li>
+                        <li><a href="#clone-repository">Clone Repository</a></li>
+                        <li><a href="#build-process">Build & Run</a></li>
+                        <li><a href="#installation-verification">Verify Installation</a></li>
+                        <li><a href="#troubleshooting">Troubleshooting</a></li>
+                        <li><a href="#next-steps">Next Steps</a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <main class="content">
+                <section id="prerequisites">
+                    <h2>Prerequisites</h2>
+                    <p>Before installing dir2, make sure your Windows system meets the following requirements:</p>
+                    
+                    <div class="alert alert-info">
+                        <strong>System Requirements:</strong> dir2 is specifically designed for Windows and requires Windows 10 or later.
+                    </div>
+
+                    <ul>
+                        <li><strong>Operating System:</strong> Windows 10 or Windows 11</li>
+                        <li><strong>Architecture:</strong> 64-bit (x64) processor</li>
+                        <li><strong>Memory:</strong> Minimum 4GB RAM recommended</li>
+                        <li><strong>Storage:</strong> At least 500MB free space for Rust toolchain and dir2</li>
+                        <li><strong>Internet Connection:</strong> Required for downloading Rust and dependencies</li>
+                    </ul>
+
+                    <h3>Required Software</h3>
+                    <ul>
+                        <li>Git (for cloning the repository)</li>
+                        <li>Microsoft C++ Build Tools or Visual Studio (for Rust compilation)</li>
+                        <li>Windows PowerShell or Command Prompt</li>
+                    </ul>
+                </section>
+
+                <section id="rust-installation">
+                    <h2>Install Rust</h2>
+                    <p>dir2 is built with Rust, so you'll need to install the Rust programming language and its package manager Cargo.</p>
+
+                    <h3>Step 1: Download Rust Installer</h3>
+                    <p>Visit the official Rust website and download the Windows installer:</p>
+                    <div class="code-block">
+                        <code>https://rustup.rs/</code>
+                    </div>
+
+                    <h3>Step 2: Run the Installer</h3>
+                    <ol>
+                        <li>Download and run <code>rustup-init.exe</code></li>
+                        <li>Follow the installation prompts</li>
+                        <li>Choose the default installation when prompted</li>
+                        <li>The installer will download and install Rust, Cargo, and rustup</li>
+                    </ol>
+
+                    <h3>Step 3: Install Microsoft C++ Build Tools</h3>
+                    <p>Rust requires Microsoft C++ build tools for linking. If you don't have Visual Studio installed:</p>
+                    <ol>
+                        <li>Download Visual Studio Installer</li>
+                        <li>Install "C++ build tools" workload</li>
+                        <li>Or install the standalone "Microsoft C++ Build Tools"</li>
+                    </ol>
+
+                    <h3>Step 4: Verify Rust Installation</h3>
+                    <p>Open a new Command Prompt or PowerShell window and verify the installation:</p>
+                    <div class="code-block">
+                        <code>rustc --version</code>
+                    </div>
+                    <div class="code-block">
+                        <code>cargo --version</code>
+                    </div>
+
+                    <div class="alert alert-success">
+                        <strong>Success!</strong> You should see version numbers for both rustc and cargo if the installation was successful.
+                    </div>
+                </section>
+
+                <section id="clone-repository">
+                    <h2>Clone Repository</h2>
+                    <p>Now that Rust is installed, let's clone the dir2 repository from GitHub.</p>
+
+                    <p><strong>Clone the repository:</strong></p>
+                    <div class="code-block">
+                        <code>git clone https://github.com/itcodehery/Project_Directory_2.git</code>
+                    </div>
+
+                    <p><strong>Navigate to the project folder:</strong></p>
+                    <div class="code-block">
+                        <code>cd Project_Directory_2</code>
+                    </div>
+
+                    <p><strong>Enter the dir2 source directory:</strong></p>
+                    <div class="code-block">
+                        <code>cd directory_2</code>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>Note:</strong> Make sure you navigate to the <code>directory_2</code> folder inside the cloned repository, as this contains the actual dir2 source code.
+                    </div>
+
+                    <h3>Alternative: Download ZIP</h3>
+                    <p>If you don't have Git installed, you can download the repository as a ZIP file:</p>
+                    <ol>
+                        <li>Go to <a href="https://github.com/itcodehery/Project_Directory_2" target="_blank">https://github.com/itcodehery/Project_Directory_2</a></li>
+                        <li>Click the green "Code" button</li>
+                        <li>Select "Download ZIP"</li>
+                        <li>Extract the ZIP file to your desired location</li>
+                        <li>Open PowerShell/Command Prompt and navigate to the extracted folder</li>
+                        <li>Navigate to the <code>directory_2</code> folder inside the extracted directory</li>
+                    </ol>
+                </section>
+
+                <section id="build-process">
+                    <h2>Build Process</h2>
+                    <p>Now that you're in the <code>directory_2</code> folder, you can build and run dir2.</p>
+
+                    <p><strong>Build the project:</strong></p>
+                    <div class="code-block">
+                        <code>cargo build</code>
+                    </div>
+
+                    <p><strong>Run dir2:</strong></p>
+                    <div class="code-block">
+                        <code>cargo run</code>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>Build Time:</strong> The first build may take several minutes as Cargo downloads and compiles dependencies. Subsequent builds will be much faster.
+                    </div>
+
+                    <div class="alert alert-success">
+                        <strong>Success!</strong> If the build completes without errors and dir2 starts up, you're ready to go!
+                    </div>
+
+                    <h3>Optional: Build for Better Performance</h3>
+                    <p>For production use, you can build an optimized version:</p>
+                    <div class="code-block">
+                        <code>cargo build --release</code>
+                    </div>
+                    <p>Then run the optimized version:</p>
+                    <div class="code-block">
+                        <code>cargo run --release</code>
+                    </div>
+                </section>
+
+                <section id="installation-verification">
+                    <h2>Verify Installation</h2>
+                    <p>If the build completed successfully and <code>cargo run</code> started dir2 without errors, your installation is complete!</p>
+
+                    <div class="alert alert-success">
+                        <strong>Installation Complete!</strong> You can now use dir2 by running <code>cargo run</code> from the <code>directory_2</code> folder.
+                    </div>
+
+                    <h3>Using dir2</h3>
+                    <p>To start dir2, make sure you're in the <code>directory_2</code> folder and run:</p>
+                    <div class="code-block">
+                        <code>cargo run</code>
+                    </div>
+
+                    <p>This will launch dir2 and you'll see the dir2 prompt where you can start entering commands.</p>
+
+                    <div class="alert alert-info">
+                        <strong>Tip:</strong> Check the <a href="usage.html">Usage Guide</a> to learn about dir2's commands and features.
+                    </div>
+                </section>
+
+                <section id="troubleshooting">
+                    <h2>Troubleshooting</h2>
+                    <p>Common issues and their solutions:</p>
+
+                    <h3>Rust Compilation Errors</h3>
+                    <div class="alert alert-warning">
+                        <strong>Error:</strong> "Microsoft C++ build tools not found"
+                    </div>
+                    <p><strong>Solution:</strong> Install Microsoft C++ Build Tools or Visual Studio with C++ development tools.</p>
+
+                    <h3>Git Not Found</h3>
+                    <div class="alert alert-warning">
+                        <strong>Error:</strong> "'git' is not recognized as an internal or external command"
+                    </div>
+                    <p><strong>Solution:</strong> Install Git for Windows from <a href="https://git-scm.com/download/win" target="_blank">git-scm.com</a> or download the repository as ZIP.</p>
+
+                    <h3>Permission Errors</h3>
+                    <div class="alert alert-warning">
+                        <strong>Error:</strong> Access denied or permission errors during build
+                    </div>
+                    <p><strong>Solution:</strong> Run PowerShell or Command Prompt as Administrator, or ensure you have write permissions to the directory.</p>
+
+                    <h3>Wrong Directory</h3>
+                    <div class="alert alert-warning">
+                        <strong>Error:</strong> "could not find `Cargo.toml`"
+                    </div>
+                    <p><strong>Solution:</strong> Make sure you're in the <code>directory_2</code> folder inside the cloned repository. Use <code>cd directory_2</code> after cloning.</p>
+
+                    <h3>Antivirus Interference</h3>
+                    <p>Some antivirus software may interfere with Rust compilation:</p>
+                    <ul>
+                        <li>Add your project directory to antivirus exclusions</li>
+                        <li>Add <code>~\.cargo</code> directory to exclusions</li>
+                        <li>Temporarily disable real-time protection during build</li>
+                    </ul>
+                </section>
+
+                <section id="next-steps">
+                    <h2>Next Steps</h2>
+                    <p>Congratulations! You've successfully installed dir2. Here's what to do next:</p>
+
+                    <div class="steps-grid">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <h3>Learn Basic Usage</h3>
+                            <p>Get familiar with dir2's SQL-like command syntax</p>
+                            <a href="usage.html" class="step-link">Usage Guide →</a>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <h3>Explore Commands</h3>
+                            <p>Discover all available commands and their options</p>
+                            <a href="commands.html" class="step-link">Commands Reference →</a>
+                        </div>
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <h3>Windows-Specific Setup</h3>
+                            <p>Optimize dir2 for your Windows environment</p>
+                            <a href="windows-setup.html" class="step-link">Windows Setup →</a>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>Need Help?</strong> If you encounter any issues, check the <a href="https://github.com/itcodehery/Project_Directory_2/issues" target="_blank">GitHub Issues</a> page or create a new issue for support.
+                    </div>
+                </section>
+            </main>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>dir2</h3>
+                    <p>SQL-Inspired File System Interface for Windows</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="installation.html">Installation</a></li>
+                        <li><a href="usage.html">Usage Guide</a></li>
+                        <li><a href="commands.html">Commands Reference</a></li>
+                        <li><a href="windows-setup.html">Windows Setup</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="https://github.com/itcodehery/Project_Directory_2" target="_blank">GitHub Repository</a></li>
+                        <li><a href="https://github.com/itcodehery/Project_Directory_2/issues" target="_blank">Report Issues</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 dir2 Project. Built with ❤️ for Windows developers.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

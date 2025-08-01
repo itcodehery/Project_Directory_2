@@ -35,9 +35,7 @@ pub struct FavoritesManager {
 
 impl FavoritesManager {
     pub fn new() -> Result<Self, String> {
-        let file_path = PathBuf::from(
-            "E:/D/Coding/Repositories/Project_Directory_2/directory_2/.dir2/favorites.json",
-        );
+        let file_path = PathBuf::from(".dir2/favorites.json",);
 
         if let Some(parent) = file_path.parent() {
             fs::create_dir_all(parent).map_err(|e| format!("Could not create folder: {}", e))?;

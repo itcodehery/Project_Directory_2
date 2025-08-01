@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dir2 - SQL-Inspired File System Interface for Windows</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>dir2</h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link active">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a href="installation.html" class="nav-link">Installation</a>
+                </li>
+                <li class="nav-item">
+                    <a href="usage.html" class="nav-link">Usage</a>
+                </li>
+                <li class="nav-item">
+                    <a href="commands.html" class="nav-link">Commands</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">dir2 (Directory 2.0)</h1>
+                <p class="hero-subtitle">An SQL-Inspired File System Interface for Windows</p>
+                <p class="hero-description">
+                    A Rust-based file system terminal that reimagines file interaction through SQL-like commands. 
+                    Navigate, select, and execute files using familiar database query syntax.
+                </p>
+                <div class="hero-buttons">
+                    <a href="installation.html" class="btn btn-primary">Get Started</a>
+                    <a href="https://github.com/itcodehery/Project_Directory_2" class="btn btn-secondary" target="_blank">View on GitHub</a>
+                </div>
+            </div>
+            <div class="hero-demo">
+                <div class="terminal-window">
+                    <div class="terminal-header">
+                        <div class="terminal-buttons">
+                            <span class="btn-close"></span>
+                            <span class="btn-minimize"></span>
+                            <span class="btn-maximize"></span>
+                        </div>
+                        <div class="terminal-title">dir2 Terminal</div>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="terminal-line">
+                            <span class="prompt">DIR2@C:</span>
+                            <span class="command">SELECT script.py FROM C:\Projects\</span>
+                        </div>
+                        <div class="terminal-line output">
+                            <span>✓ Selected: script.py</span>
+                        </div>
+                        <div class="terminal-line">
+                            <span class="prompt">DIR2@C:</span>
+                            <span class="command">RUN STATE</span>
+                        </div>
+                        <div class="terminal-line output">
+                            <span>✓ Executing: python script.py</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Key Features</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3>SQL-Style File Selection</h3>
+                    <p>Use familiar SQL syntax like <code>SELECT script.py FROM C:\Projects\</code> to load files into state</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3>Stateful File Management</h3>
+                    <p>Single-file state system for focused workflow management and efficient file operations</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⭐</div>
+                    <h3>Quick Favorites System</h3>
+                    <p>Save frequently used files and executables for instant access and faster workflow</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔎</div>
+                    <h3>Global File Search</h3>
+                    <p>Find exact file locations system-wide using the powerful <code>FIND EXACT</code> command</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3>Direct Execution</h3>
+                    <p>Run selected files or favorites with simple commands without complex navigation</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🪟</div>
+                    <h3>Windows Integration</h3>
+                    <p>Built specifically for Windows with <code>rust_search</code> module for system-wide search</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="getting-started">
+        <div class="container">
+            <h2 class="section-title">Getting Started</h2>
+            <div class="steps-grid">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Install Rust</h3>
+                    <p>Make sure you have Rust installed on your Windows system</p>
+                    <a href="installation.html#rust-installation" class="step-link">Installation Guide →</a>
+                </div>
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Clone & Build</h3>
+                    <p>Clone the repository and build the project using Cargo</p>
+                    <a href="installation.html#build-process" class="step-link">Build Instructions →</a>
+                </div>
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Start Using</h3>
+                    <p>Launch dir2 and start using SQL-like commands for file management</p>
+                    <a href="usage.html" class="step-link">Usage Guide →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="demo-section">
+        <div class="container">
+            <h2 class="section-title">Example Commands</h2>
+            <div class="demo-grid">
+                <div class="demo-card">
+                    <h3>File Selection</h3>
+                    <div class="code-block">
+                        <code>SELECT document.pdf FROM C:\Users\Documents\</code>
+                    </div>
+                    <p>Load a specific file into the current state for further operations</p>
+                </div>
+                <div class="demo-card">
+                    <h3>Global Search</h3>
+                    <div class="code-block">
+                        <code>FIND EXACT config.json</code>
+                    </div>
+                    <p>Search for files across the entire system to find exact matches</p>
+                </div>
+                <div class="demo-card">
+                    <h3>Add to Favorites</h3>
+                    <div class="code-block">
+                        <code>FAV SET STATE</code>
+                    </div>
+                    <p>Add currently selected file to your favorites for quick access</p>
+                </div>
+                <div class="demo-card">
+                    <h3>Execute File</h3>
+                    <div class="code-block">
+                        <code>RUN STATE</code>
+                    </div>
+                    <p>Execute the currently selected file from state</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>dir2</h3>
+                    <p>SQL-Inspired File System Interface for Windows</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="installation.html">Installation</a></li>
+                        <li><a href="usage.html">Usage Guide</a></li>
+                        <li><a href="commands.html">Commands Reference</a></li>
+                        <li><a href="windows-setup.html">Windows Setup</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="https://github.com/itcodehery/Project_Directory_2" target="_blank">GitHub Repository</a></li>
+                        <li><a href="https://github.com/itcodehery/Project_Directory_2/issues" target="_blank">Report Issues</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 dir2 Project. Built with ❤️ for Windows developers.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
