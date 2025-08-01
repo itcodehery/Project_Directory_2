@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commands Reference - dir2 Documentation</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>dir2</h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a href="installation.html" class="nav-link">Installation</a>
+                </li>
+                <li class="nav-item">
+                    <a href="usage.html" class="nav-link">Usage</a>
+                </li>
+                <li class="nav-item">
+                    <a href="commands.html" class="nav-link active">Commands</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <h1 class="page-title">Commands Reference</h1>
+            <p class="page-subtitle">Complete reference for all dir2 commands and their syntax</p>
+        </div>
+    </header>
+
+    <section class="content-section">
+        <div class="content-grid">
+            <aside class="sidebar">
+                <nav class="sidebar-nav">
+                    <h3>Categories</h3>
+                    <ul>
+                        <li><a href="#meta-commands">Meta Commands</a></li>
+                        <li><a href="#state-commands">State Commands</a></li>
+                        <li><a href="#favorites-commands">Favorites</a></li>
+                        <li><a href="#search-commands">Search Commands</a></li>
+                        <li><a href="#quick-reference">Quick Reference</a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <main class="content">
+                <section id="meta-commands">
+                    <h2>Meta Commands</h2>
+                    <p>Basic system and terminal management commands.</p>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Alternative</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>CLS</strong></td>
+                                <td><code>/C</code></td>
+                                <td>Clear the terminal screen</td>
+                                <td><code>CLS</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>LC</strong></td>
+                                <td>-</td>
+                                <td>List all available commands</td>
+                                <td><code>LC</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>WD</strong></td>
+                                <td>&lt;name&gt;</td>
+                                <td>Watch Directory - Change to a specific directory</td>
+                                <td><code>WD Documents</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>LD</strong></td>
+                                <td>-</td>
+                                <td>List files and directories in current location</td>
+                                <td><code>LD</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>DD</strong></td>
+                                <td>-</td>
+                                <td>Dodge (navigate away from) current directory</td>
+                                <td><code>DD</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>CD</strong></td>
+                                <td>-</td>
+                                <td>Change drive or directory</td>
+                                <td><code>CD C:\Projects\</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>EXIT</strong></td>
+                                <td><code>/E</code></td>
+                                <td>Exit the dir2 terminal</td>
+                                <td><code>EXIT</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="state-commands">
+                    <h2>State Commands</h2>
+                    <p>Commands for managing the current file state and executing files.</p>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Alternative</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>SELECT filename FROM directory</strong></td>
+                                <td>-</td>
+                                <td>Sets specified file as current STATE</td>
+                                <td><code>SELECT script.py FROM C:\Projects\</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>VIEW STATE</strong></td>
+                                <td><code>VS</code></td>
+                                <td>View the currently selected file in STATE</td>
+                                <td><code>VIEW STATE</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>DROP STATE</strong></td>
+                                <td><code>DS</code></td>
+                                <td>Drops the current STATE (deselect file)</td>
+                                <td><code>DROP STATE</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>META STATE</strong></td>
+                                <td><code>MS</code></td>
+                                <td>View metadata of the current STATE file</td>
+                                <td><code>META STATE</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>RUN STATE</strong></td>
+                                <td><code>RS</code></td>
+                                <td>Execute the file present in current STATE</td>
+                                <td><code>RUN STATE</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </section>
+
+                <section id="favorites-commands">
+                    <h2>Favorites Commands</h2>
+                    <p>Commands for managing your favorite files and quick access.</p>
+
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>FAV VIEW</strong></td>
+                                <td>View all favorites as a numbered list</td>
+                                <td><code>FAV VIEW</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>FAV RM &lt;index&gt;</strong></td>
+                                <td>Remove favorite at specified index</td>
+                                <td><code>FAV RM 3</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>FAV SET STATE</strong></td>
+                                <td>Add current STATE file to favorites</td>
+                                <td><code>FAV SET STATE</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>RUN FAV &lt;index&gt;</strong></td>
+                                <td>Execute favorite file at specified index</td>
+                                <td><code>RUN FAV 1</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="search-commands">
+                    <h2>Search Commands</h2>
+                    <p>Commands for finding files and searching the web.</p>
+
+                    <h3>File Search</h3>
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Alternative</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>FIND EXACT &lt;query&gt;</strong></td>
+                                <td><code>FE &lt;query&gt;</code></td>
+                                <td>Perform system-wide file search, returns directory list</td>
+                                <td><code>FIND EXACT config.json</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Web Search</h3>
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Alternative</th>
+                                <th>Description</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>SEARCH GOOGLE &lt;query&gt;</strong></td>
+                                <td><code>S G &lt;query&gt;</code></td>
+                                <td>Perform web search using Google</td>
+                                <td><code>SEARCH GOOGLE rust tutorial</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>SEARCH DDG &lt;query&gt;</strong></td>
+                                <td><code>S D &lt;query&gt;</code></td>
+                                <td>Perform web search using DuckDuckGo</td>
+                                <td><code>SEARCH DDG privacy tools</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>SEARCH CHATGPT &lt;query&gt;</strong></td>
+                                <td><code>S C &lt;query&gt;</code></td>
+                                <td>Perform query to ChatGPT</td>
+                                <td><code>SEARCH CHATGPT explain recursion</code></td>
+                            </tr>
+                            <tr>
+                                <td><strong>SEARCH PERPLEXITY &lt;query&gt;</strong></td>
+                                <td><code>S P &lt;query&gt;</code></td>
+                                <td>Perform query to Perplexity AI</td>
+                                <td><code>SEARCH PERPLEXITY latest AI news</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="quick-reference">
+                    <h2>Quick Reference</h2>
+                    <p>Common command patterns and quick syntax reference.</p>
+
+                    <h3>Essential Commands</h3>
+                    <p>Start with these core commands to get familiar with dir2:</p>
+                    
+                    <div class="code-block">
+                        <code>LD</code>
+                    </div>
+                    <p><strong>List Directory</strong> - Shows all files and folders in current directory</p>
+
+                    <div class="code-block">
+                        <code>SELECT filename FROM path</code>
+                    </div>
+                    <p><strong>Select File</strong> - Load a file into current state for operations</p>
+
+                    <div class="code-block">
+                        <code>VIEW STATE</code>
+                    </div>
+                    <p><strong>View Current State</strong> - Shows currently selected file (short: VS)</p>
+
+                    <div class="code-block">
+                        <code>RUN STATE</code>
+                    </div>
+                    <p><strong>Execute File</strong> - Runs the currently selected file (short: RS)</p>
+
+                    <div class="code-block">
+                        <code>FAV SET STATE</code>
+                    </div>
+                    <p><strong>Add to Favorites</strong> - Save current file for quick access</p>
+
+                    <div class="code-block">
+                        <code>FAV VIEW</code>
+                    </div>
+                    <p><strong>View Favorites</strong> - List all saved favorites with index numbers</p>
+
+                    <div class="code-block">
+                        <code>RUN FAV 1</code>
+                    </div>
+                    <p><strong>Run Favorite</strong> - Execute favorite file by index number</p>
+
+                    <div class="code-block">
+                        <code>FIND EXACT filename</code>
+                    </div>
+                    <p><strong>Find File</strong> - Search entire system for a file (short: FE)</p>
+
+                    <div class="code-block">
+                        <code>SEARCH GOOGLE query</code>
+                    </div>
+                    <p><strong>Web Search</strong> - Search Google from dir2 (short: S G)</p>
+
+                    <h3>Command Categories Summary</h3>
+                    <div class="features-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">⚙️</div>
+                            <h3>Meta Commands</h3>
+                            <p>CLS, LC, WD, LD, DD, CD, EXIT - System management</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">📁</div>
+                            <h3>State Commands</h3>
+                            <p>SELECT, VIEW STATE, RUN STATE - File state management</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">⭐</div>
+                            <h3>Favorites</h3>
+                            <p>FAV VIEW, FAV SET STATE, RUN FAV - Quick access system</p>
+                        </div>
+                        <div class="feature-card">
+                            <div class="feature-icon">🔍</div>
+                            <h3>Search</h3>
+                            <p>FIND EXACT, Web search commands - File and web searching</p>
+                        </div>
+                    </div>
+
+                    <h3>Syntax Rules</h3>
+                    <div class="alert alert-info">
+                        <strong>Remember:</strong>
+                        <ul>
+                            <li>All commands are case-insensitive</li>
+                            <li>Use LC to list all available commands</li>
+                            <li>SELECT requires filename and directory path</li>
+                            <li>Favorites are managed by index numbers</li>
+                            <li>Web searches open in your default browser</li>
+                        </ul>
+                    </div>
+
+                    <h3>Common Patterns</h3>
+                    <p>Practical workflows showing how commands work together:</p>
+
+                    <h4>Pattern 1: Quick File Execution</h4>
+                    <div class="code-block">
+                        <code>SELECT app.exe FROM C:\Tools\</code>
+                    </div>
+                    <p><strong>Select Application</strong> - Load executable into state</p>
+                    
+                    <div class="code-block">
+                        <code>RUN STATE</code>
+                    </div>
+                    <p><strong>Execute Immediately</strong> - Run the selected application</p>
+
+                    <h4>Pattern 2: Save to Favorites</h4>
+                    <div class="code-block">
+                        <code>SELECT backup.py FROM C:\Scripts\</code>
+                    </div>
+                    <p><strong>Select Script</strong> - Choose a frequently used script</p>
+                    
+                    <div class="code-block">
+                        <code>FAV SET STATE</code>
+                    </div>
+                    <p><strong>Add to Favorites</strong> - Save for quick access later</p>
+                    
+                    <div class="code-block">
+                        <code>FAV VIEW</code>
+                    </div>
+                    <p><strong>View Favorites</strong> - See all saved favorites with index numbers</p>
+
+                    <h4>Pattern 3: Find and Execute</h4>
+                    <div class="code-block">
+                        <code>FIND EXACT deploy.bat</code>
+                    </div>
+                    <p><strong>Find File</strong> - Search entire system for the file</p>
+                    
+                    <div class="code-block">
+                        <code>SELECT deploy.bat FROM C:\Found\Path\</code>
+                    </div>
+                    <p><strong>Select from Found Location</strong> - Load the discovered file</p>
+                    
+                    <div class="code-block">
+                        <code>RUN STATE</code>
+                    </div>
+                    <p><strong>Execute</strong> - Run the found and selected file</p>
+
+                    <h4>Pattern 4: Web Research</h4>
+                    <div class="code-block">
+                        <code>SEARCH GOOGLE "rust file management"</code>
+                    </div>
+                    <p><strong>Google Search</strong> - Research topics in your browser</p>
+                    
+                    <div class="code-block">
+                        <code>SEARCH CHATGPT "explain SQL syntax"</code>
+                    </div>
+                    <p><strong>ChatGPT Query</strong> - Ask AI for explanations and help</p>
+
+                    <h3>Alternative Commands</h3>
+                    <table class="command-table">
+                        <thead>
+                            <tr>
+                                <th>Full Command</th>
+                                <th>Short Form</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>CLS</code></td>
+                                <td><code>/C</code></td>
+                                <td>Clear screen</td>
+                            </tr>
+                            <tr>
+                                <td><code>EXIT</code></td>
+                                <td><code>/E</code></td>
+                                <td>Exit terminal</td>
+                            </tr>
+                            <tr>
+                                <td><code>VIEW STATE</code></td>
+                                <td><code>VS</code></td>
+                                <td>View current state</td>
+                            </tr>
+                            <tr>
+                                <td><code>DROP STATE</code></td>
+                                <td><code>DS</code></td>
+                                <td>Drop current state</td>
+                            </tr>
+                            <tr>
+                                <td><code>META STATE</code></td>
+                                <td><code>MS</code></td>
+                                <td>View file metadata</td>
+                            </tr>
+                            <tr>
+                                <td><code>RUN STATE</code></td>
+                                <td><code>RS</code></td>
+                                <td>Run current state</td>
+                            </tr>
+                            <tr>
+                                <td><code>FIND EXACT</code></td>
+                                <td><code>FE</code></td>
+                                <td>Find exact file</td>
+                            </tr>
+                            <tr>
+                                <td><code>SEARCH GOOGLE</code></td>
+                                <td><code>S G</code></td>
+                                <td>Google search</td>
+                            </tr>
+                            <tr>
+                                <td><code>SEARCH DDG</code></td>
+                                <td><code>S D</code></td>
+                                <td>DuckDuckGo search</td>
+                            </tr>
+                            <tr>
+                                <td><code>SEARCH CHATGPT</code></td>
+                                <td><code>S C</code></td>
+                                <td>ChatGPT query</td>
+                            </tr>
+                            <tr>
+                                <td><code>SEARCH PERPLEXITY</code></td>
+                                <td><code>S P</code></td>
+                                <td>Perplexity query</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+            </main>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>dir2</h3>
+                    <p>SQL-Inspired File System Interface for Windows</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="installation.html">Installation</a></li>
+                        <li><a href="usage.html">Usage Guide</a></li>
+                        <li><a href="commands.html">Commands Reference</a></li>
+                        <li><a href="windows-setup.html">Windows Setup</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="https://github.com/itcodehery/Project_Directory_2" target="_blank">GitHub Repository</a></li>
+                        <li><a href="https://github.com/itcodehery/Project_Directory_2/issues" target="_blank">Report Issues</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 dir2 Project. Built with ❤️ for Windows developers.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>

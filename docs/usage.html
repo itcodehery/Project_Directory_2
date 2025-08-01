@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usage Guide - dir2 Documentation</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <h2>dir2</h2>
+            </div>
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a href="index.html" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a href="installation.html" class="nav-link">Installation</a>
+                </li>
+                <li class="nav-item">
+                    <a href="usage.html" class="nav-link active">Usage</a>
+                </li>
+                <li class="nav-item">
+                    <a href="commands.html" class="nav-link">Commands</a>
+                </li>
+            </ul>
+            <div class="hamburger">
+                <span class="bar"></span>
+                <span class="bar"></span>
+                <span class="bar"></span>
+            </div>
+        </div>
+    </nav>
+
+    <header class="page-header">
+        <div class="container">
+            <h1 class="page-title">Usage Guide</h1>
+            <p class="page-subtitle">Learn how to use dir2's SQL-inspired commands for efficient file management</p>
+        </div>
+    </header>
+
+    <section class="content-section">
+        <div class="content-grid">
+            <aside class="sidebar">
+                <nav class="sidebar-nav">
+                    <h3>On This Page</h3>
+                    <ul>
+                        <li><a href="#getting-started">Getting Started</a></li>
+                        <li><a href="#basic-concepts">Basic Concepts</a></li>
+                        <li><a href="#file-selection">File Selection</a></li>
+                        <li><a href="#file-execution">File Execution</a></li>
+                        <li><a href="#favorites-system">Favorites System</a></li>
+                        <li><a href="#file-search">File Search</a></li>
+                        <li><a href="#common-workflows">Common Workflows</a></li>
+                        <li><a href="#tips-and-tricks">Tips & Tricks</a></li>
+                    </ul>
+                </nav>
+            </aside>
+
+            <main class="content">
+                <section id="getting-started">
+                    <h2>Getting Started</h2>
+                    <p>dir2 provides a unique approach to file system interaction by using SQL-like syntax. Instead of traditional navigation commands, you query your file system like a database.</p>
+
+                    <h3>Launching dir2</h3>
+                    <p>Inside the directory_2 folder run</p>
+                    <div class="code-block">
+                        <code>cargo run</code>
+                    </div>
+
+                    <p>You'll see the dir2 prompt:</p>
+                    <div class="code-block">
+                        <code>dir2></code>
+                    </div>
+
+                    <h3>Essential Commands</h3>
+                    <p>Try these basic commands to get familiar with dir2:</p>
+                    
+                    <div class="code-block">
+                        <code>LC</code>
+                    </div>
+                    <p><strong>List Commands</strong> - Shows all available commands in dir2</p>
+
+                    <div class="code-block">
+                        <code>LD</code>
+                    </div>
+                    <p><strong>List Directory</strong> - Lists all files and folders in the current directory</p>
+
+                    <div class="code-block">
+                        <code>WD &lt;directory_name&gt;</code>
+                    </div>
+                    <p><strong>Watch Directory</strong> - Change to a specific directory by name</p>
+
+                    <div class="code-block">
+                        <code>CD drive</code>
+                    </div>
+                    <p><strong>Change Drive</strong> - Navigate to a different drive</p>
+
+                    <div class="code-block">
+                        <code>SELECT filename FROM path</code>
+                    </div>
+                    <p><strong>Select File</strong> - Load a file into the current state for operations</p>
+
+                    <div class="code-block">
+                        <code>VIEW STATE</code>
+                    </div>
+                    <p><strong>View Current State</strong> - Shows the currently selected file (short: VS)</p>
+
+                    <div class="code-block">
+                        <code>RUN STATE</code>
+                    </div>
+                    <p><strong>Execute File</strong> - Runs the currently selected file (short: RS)</p>
+
+                    <div class="code-block">
+                        <code>FIND EXACT filename</code>
+                    </div>
+                    <p><strong>Find File</strong> - Search for a file across the entire system (short: FE)</p>
+
+                    <div class="code-block">
+                        <code>FAV VIEW</code>
+                    </div>
+                    <p><strong>View Favorites</strong> - Shows all saved favorite files with their index numbers</p>
+
+                    <div class="code-block">
+                        <code>CLS</code>
+                    </div>
+                    <p><strong>Clear Screen</strong> - Clears the terminal screen (short: /C)</p>
+
+                    <div class="alert alert-info">
+                        <strong>SQL Mindset:</strong> Think of your file system as a database where directories are tables and files are records you can SELECT and manipulate.
+                    </div>
+                </section>
+
+                <section id="basic-concepts">
+                    <h2>Basic Concepts</h2>
+                    <p>Understanding these core concepts will help you master dir2's approach to file management.</p>
+
+                    <h3>Stateful File Management</h3>
+                    <p>dir2 maintains a current file state. When you SELECT a file, it becomes the active file for subsequent operations:</p>
+                    <div class="code-block">
+                        <code>SELECT document.txt FROM C:\Users\Documents\</code>
+                    </div>
+                    <p>Now <code>document.txt</code> is loaded into the current state and ready for operations.</p>
+
+                    <h3>SQL-Like Syntax</h3>
+                    <p>Commands follow familiar SQL patterns:</p>
+                    <ul>
+                        <li><strong>SELECT:</strong> Choose files from directories</li>
+                        <li><strong>FROM:</strong> Specify the source directory</li>
+                        <li><strong>STATE:</strong> Current file in memory for operations</li>
+                    </ul>
+
+                    <h3>Path Formats</h3>
+                    <p>dir2 supports various path formats for Windows:</p>
+                    <ul>
+                        <li><strong>Absolute paths:</strong> <code>C:\Users\Documents\</code></li>
+                        <li><strong>Relative paths:</strong> <code>.\subfolder\</code></li>
+                        <li><strong>Home directory:</strong> <code>~\Documents\</code></li>
+                        <li><strong>Current directory:</strong> <code>.</code></li>
+                    </ul>
+                </section>
+
+                <section id="file-selection">
+                    <h2>File Selection</h2>
+                    <p>The SELECT command is the cornerstone of dir2. It loads files into the current state for further operations.</p>
+
+                    <h3>Basic File Selection</h3>
+                    <div class="code-block">
+                        <code>SELECT filename.txt FROM C:\Path\To\Directory\</code>
+                    </div>
+
+                    <h3>Checking Current State</h3>
+                    <p>After selecting a file, check what's currently loaded:</p>
+                    <div class="code-block">
+                        <code>VIEW STATE</code>
+                    </div>
+                    <p>Or use the short form:</p>
+                    <div class="code-block">
+                        <code>VS</code>
+                    </div>
+
+                    <h3>Selection Examples</h3>
+                    <div class="demo-grid">
+                        <div class="demo-card">
+                            <h3>Select from Current Directory</h3>
+                            <div class="code-block">
+                                <code>SELECT script.py FROM .</code>
+                            </div>
+                            <p>Selects script.py from the current working directory</p>
+                        </div>
+                        <div class="demo-card">
+                            <h3>Select from Documents</h3>
+                            <div class="code-block">
+                                <code>SELECT report.pdf FROM C:\Users\Documents\</code>
+                            </div>
+                            <p>Selects report.pdf from your Documents folder</p>
+                        </div>
+                        <div class="demo-card">
+                            <h3>Select Executable</h3>
+                            <div class="code-block">
+                                <code>SELECT app.exe FROM C:\Program Files\MyApp\</code>
+                            </div>
+                            <p>Selects an executable file for later execution</p>
+                        </div>
+                        <div class="demo-card">
+                            <h3>View File Metadata</h3>
+                            <div class="code-block">
+                                <code>META STATE</code>
+                            </div>
+                            <p>View metadata of the currently selected file</p>
+                        </div>
+                    </div>
+
+                    <h3>State Management</h3>
+                    <p>Manage your current file state step by step:</p>
+                    
+                    <p><strong>Select a file:</strong></p>
+                    <div class="code-block">
+                        <code>SELECT config.ini FROM C:\App\</code>
+                    </div>
+
+                    <p><strong>Check what's selected:</strong></p>
+                    <div class="code-block">
+                        <code>VIEW STATE</code>
+                    </div>
+
+                    <p><strong>View file metadata:</strong></p>
+                    <div class="code-block">
+                        <code>META STATE</code>
+                    </div>
+
+                    <p><strong>Clear the state when done:</strong></p>
+                    <div class="code-block">
+                        <code>DROP STATE</code>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>State Benefits:</strong> The state system allows you to work with one file at a time, reducing confusion and enabling focused file operations.
+                    </div>
+                </section>
+
+                <section id="file-execution">
+                    <h2>File Execution</h2>
+                    <p>Once you have a file selected in state, you can execute it using the RUN STATE command.</p>
+
+                    <h3>Basic Execution</h3>
+                    <p>Execute the currently selected file:</p>
+                    <div class="code-block">
+                        <code>RUN STATE</code>
+                    </div>
+                    <p>Or use the short form:</p>
+                    <div class="code-block">
+                        <code>RS</code>
+                    </div>
+
+                    <h3>Execution Examples</h3>
+                    <h4>Python Scripts</h4>
+                    <div class="code-block">
+                        <code>SELECT data_analysis.py FROM C:\Projects\
+RUN STATE</code>
+                    </div>
+                    <p>This will execute: <code>python data_analysis.py</code></p>
+
+                    <h4>Executable Files</h4>
+                    <div class="code-block">
+                        <code>SELECT notepad.exe FROM C:\Windows\System32\
+RUN STATE</code>
+                    </div>
+                    <p>This will launch Notepad</p>
+
+                    <h4>Batch Files</h4>
+                    <div class="code-block">
+                        <code>SELECT deploy.bat FROM .\scripts\
+RUN STATE</code>
+                    </div>
+                    <p>This will execute the batch file</p>
+
+                    <div class="alert alert-info">
+                        <strong>Smart Execution:</strong> dir2 automatically determines the appropriate execution method based on file extension.
+                    </div>
+                </section>
+
+                <section id="favorites-system">
+                    <h2>Favorites System</h2>
+                    <p>The favorites system allows you to save frequently used files for instant access using index numbers.</p>
+
+                    <h3>Adding to Favorites</h3>
+                    <p>Add the currently selected file to favorites:</p>
+                    <div class="code-block">
+                        <code>FAV SET STATE</code>
+                    </div>
+
+                    <h3>Using Favorites</h3>
+                    <p>View all favorites with their index numbers:</p>
+                    <div class="code-block">
+                        <code>FAV VIEW</code>
+                    </div>
+                    <p>Execute a favorite by its index:</p>
+                    <div class="code-block">
+                        <code>RUN FAV 1</code>
+                    </div>
+
+                    <h3>Managing Favorites</h3>
+                    <div class="demo-grid">
+                        <div class="demo-card">
+                            <h3>View All Favorites</h3>
+                            <div class="code-block">
+                                <code>FAV VIEW</code>
+                            </div>
+                            <p>Display all saved favorites with index numbers</p>
+                        </div>
+                        <div class="demo-card">
+                            <h3>Remove Favorite</h3>
+                            <div class="code-block">
+                                <code>FAV RM 3</code>
+                            </div>
+                            <p>Remove favorite at index 3</p>
+                        </div>
+                        <div class="demo-card">
+                            <h3>Add Current File</h3>
+                            <div class="code-block">
+                                <code>FAV SET STATE</code>
+                            </div>
+                            <p>Add currently selected file to favorites</p>
+                        </div>
+                        <div class="demo-card">
+                            <h3>Run Favorite</h3>
+                            <div class="code-block">
+                                <code>RUN FAV 2</code>
+                            </div>
+                            <p>Execute favorite file at index 2</p>
+                        </div>
+                    </div>
+
+                    <h3>Favorites Workflow Example</h3>
+                    <p><strong>Select and add a commonly used tool:</strong></p>
+                    <div class="code-block">
+                        <code>SELECT backup.py FROM C:\Scripts\</code>
+                    </div>
+                    <div class="code-block">
+                        <code>FAV SET STATE</code>
+                    </div>
+
+                    <p><strong>View favorites list:</strong></p>
+                    <div class="code-block">
+                        <code>FAV VIEW</code>
+                    </div>
+
+                    <p><strong>Later, run it directly by index:</strong></p>
+                    <div class="code-block">
+                        <code>RUN FAV 1</code>
+                    </div>
+                </section>
+
+                <section id="file-search">
+                    <h2>File Search</h2>
+                    <p>dir2 provides powerful search capabilities to find files across your entire system and search the web.</p>
+
+                    <h3>Exact File Search</h3>
+                    <p>Find exact file matches system-wide:</p>
+                    <div class="code-block">
+                        <code>FIND EXACT config.json</code>
+                    </div>
+                    <p>Or use the short form:</p>
+                    <div class="code-block">
+                        <code>FE config.json</code>
+                    </div>
+
+                    <h3>Web Search</h3>
+                    <p>Search the web directly from dir2:</p>
+                    <div class="demo-grid">
+                        <div class="demo-card">
+                            <h3>Google Search</h3>
+                            <div class="code-block">
+                                <code>SEARCH GOOGLE "rust tutorial"</code>
+                            </div>
+                            <p>Search Google (short: S G rust tutorial)</p>
+                        </div>
+                        <div class="demo-card">
+                            <h3>DuckDuckGo Search</h3>
+                            <div class="code-block">
+                                <code>SEARCH DDG "privacy tools"</code>
+                            </div>
+                            <p>Search DuckDuckGo (short: S D privacy tools)</p>
+                        </div>
+                        <div class="demo-card">
+                            <h3>ChatGPT Query</h3>
+                            <div class="code-block">
+                                <code>SEARCH CHATGPT "explain recursion"</code>
+                            </div>
+                            <p>Query ChatGPT (short: S C explain recursion)</p>
+                        </div>
+                        <div class="demo-card">
+                            <h3>Perplexity Query</h3>
+                            <div class="code-block">
+                                <code>SEARCH PERPLEXITY "latest AI news"</code>
+                            </div>
+                            <p>Query Perplexity (short: S P latest AI news)</p>
+                        </div>
+                    </div>
+
+                    <h3>Search and Select Workflow</h3>
+                    <p><strong>Find the file first:</strong></p>
+                    <div class="code-block">
+                        <code>FIND EXACT important_doc.pdf</code>
+                    </div>
+
+                    <p><strong>Then select from the found location:</strong></p>
+                    <div class="code-block">
+                        <code>SELECT important_doc.pdf FROM C:\Found\Path\</code>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>Search Performance:</strong> FIND EXACT searches the entire system and may take time on large drives. Web searches open in your default browser.
+                    </div>
+                </section>
+
+                <section id="common-workflows">
+                    <h2>Common Workflows</h2>
+                    <p>Here are some typical workflows that demonstrate dir2's power and efficiency with clean, step-by-step patterns.</p>
+
+                    <h3>Pattern 1: Quick File Execution</h3>
+                    <div class="code-block">
+                        <code>SELECT app.exe FROM C:\Tools\</code>
+                    </div>
+                    <p><strong>Select Application</strong> - Load an executable into state</p>
+                    
+                    <div class="code-block">
+                        <code>RUN STATE</code>
+                    </div>
+                    <p><strong>Execute Immediately</strong> - Run the selected application</p>
+
+                    <h3>Pattern 2: Save to Favorites</h3>
+                    <div class="code-block">
+                        <code>SELECT backup.py FROM C:\Scripts\</code>
+                    </div>
+                    <p><strong>Select Script</strong> - Choose a frequently used script</p>
+                    
+                    <div class="code-block">
+                        <code>FAV SET STATE</code>
+                    </div>
+                    <p><strong>Add to Favorites</strong> - Save for quick access later</p>
+                    
+                    <div class="code-block">
+                        <code>FAV VIEW</code>
+                    </div>
+                    <p><strong>View Favorites List</strong> - See all saved favorites with index numbers</p>
+
+                    <h3>Pattern 3: Find and Execute</h3>
+                    <div class="code-block">
+                        <code>FIND EXACT deploy.bat</code>
+                    </div>
+                    <p><strong>Find File</strong> - Search entire system for the file</p>
+                    
+                    <div class="code-block">
+                        <code>SELECT deploy.bat FROM C:\Found\Path\</code>
+                    </div>
+                    <p><strong>Select from Found Location</strong> - Load the discovered file</p>
+                    
+                    <div class="code-block">
+                        <code>RUN STATE</code>
+                    </div>
+                    <p><strong>Execute</strong> - Run the found and selected file</p>
+
+                    <h3>Pattern 4: Web Research</h3>
+                    <div class="code-block">
+                        <code>SEARCH GOOGLE "rust file management"</code>
+                    </div>
+                    <p><strong>Google Search</strong> - Research topics in your browser</p>
+                    
+                    <div class="code-block">
+                        <code>SEARCH CHATGPT "explain SQL syntax"</code>
+                    </div>
+                    <p><strong>ChatGPT Query</strong> - Ask AI for explanations and help</p>
+
+                    <h3>Development Workflow Example</h3>
+                    <p><strong>Navigate and explore:</strong></p>
+                    <div class="code-block">
+                        <code>LD</code>
+                    </div>
+                    <div class="code-block">
+                        <code>CD C:\Projects\MyApp\</code>
+                    </div>
+                    <div class="code-block">
+                        <code>SELECT build.py FROM .</code>
+                    </div>
+                    <div class="code-block">
+                        <code>FAV SET STATE</code>
+                    </div>
+                    <div class="code-block">
+                        <code>RUN STATE</code>
+                    </div>
+                </section>
+
+                <section id="tips-and-tricks">
+                    <h2>Tips & Tricks</h2>
+                    <p>Master these tips to become more efficient with dir2.</p>
+
+                    <h3>Navigation and Exploration</h3>
+                    <ul>
+                        <li>Use <code>LD</code> frequently to see files in the current directory</li>
+                        <li>Use <code>WD &lt;name&gt;</code> to change to a specific directory</li>
+                        <li>Use <code>CD</code> to navigate between directories efficiently</li>
+                        <li>Use <code>LC</code> to list all available commands anytime</li>
+                    </ul>
+
+                    <h3>State Management</h3>
+                    <ul>
+                        <li>Always check your current state with <code>VIEW STATE</code> or <code>VS</code></li>
+                        <li>Use <code>META STATE</code> to get file information before execution</li>
+                        <li>Clear state with <code>DROP STATE</code> when switching tasks</li>
+                        <li>Remember: only one file can be in state at a time</li>
+                    </ul>
+
+                    <h3>Favorites Efficiency</h3>
+                    <ul>
+                        <li>Add frequently used scripts to favorites with <code>FAV SET STATE</code></li>
+                        <li>Use <code>FAV VIEW</code> to see all your shortcuts</li>
+                        <li>Run favorites by index: <code>RUN FAV 1</code>, <code>RUN FAV 2</code>, etc.</li>
+                        <li>Remove unused favorites with <code>FAV RM &lt;index&gt;</code></li>
+                    </ul>
+
+                    <h3>Search Strategies</h3>
+                    <div class="alert alert-success">
+                        <strong>Multi-Search Approach:</strong> Use file search for local files and web search for research - all from the same interface!
+                    </div>
+
+                    <ul>
+                        <li>Use <code>FE</code> as a shortcut for <code>FIND EXACT</code></li>
+                        <li>Combine file search with web research: <code>FE config.json</code> then <code>S G "config.json best practices"</code></li>
+                        <li>Use specific search engines: Google for general search, DDG for privacy, ChatGPT for explanations</li>
+                        <li>Web searches open in your browser while dir2 stays active</li>
+                    </ul>
+
+                    <h3>Command Shortcuts</h3>
+                    <div class="alert alert-info">
+                        <strong>Remember the Shortcuts:</strong> Most commands have short forms to speed up your workflow.
+                    </div>
+
+                    <ul>
+                        <li><code>/C</code> instead of <code>CLS</code> to clear screen</li>
+                        <li><code>/E</code> instead of <code>EXIT</code> to quit</li>
+                        <li><code>VS</code> instead of <code>VIEW STATE</code></li>
+                        <li><code>RS</code> instead of <code>RUN STATE</code></li>
+                        <li><code>S G</code> instead of <code>SEARCH GOOGLE</code></li>
+                    </ul>
+
+                    <h3>Advanced Usage</h3>
+                    <p><strong>Quick project workflow:</strong></p>
+                    <div class="code-block">
+                        <code>CD C:\Projects\NewProject\</code>
+                    </div>
+                    <div class="code-block">
+                        <code>LD</code>
+                    </div>
+                    <div class="code-block">
+                        <code>SELECT setup.py FROM .</code>
+                    </div>
+                    <div class="code-block">
+                        <code>FAV SET STATE</code>
+                    </div>
+
+                    <p><strong>Development cycle:</strong></p>
+                    <div class="code-block">
+                        <code>RUN FAV 1</code>
+                    </div>
+                    <div class="code-block">
+                        <code>SELECT build.py FROM .</code>
+                    </div>
+                    <div class="code-block">
+                        <code>RUN STATE</code>
+                    </div>
+                    <div class="code-block">
+                        <code>SEARCH GOOGLE "deployment best practices"</code>
+                    </div>
+
+                    <h3>Error Prevention</h3>
+                    <ul>
+                        <li>Use <code>LD</code> to verify file existence before selection</li>
+                        <li>Check state with <code>VS</code> before running commands</li>
+                        <li>Use full paths for files outside current directory</li>
+                        <li>Test file execution outside dir2 if problems occur</li>
+                    </ul>
+                </section>
+            </main>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h3>dir2</h3>
+                    <p>SQL-Inspired File System Interface for Windows</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="installation.html">Installation</a></li>
+                        <li><a href="usage.html">Usage Guide</a></li>
+                        <li><a href="commands.html">Commands Reference</a></li>
+                        <li><a href="windows-setup.html">Windows Setup</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Links</h4>
+                    <ul>
+                        <li><a href="https://github.com/itcodehery/Project_Directory_2" target="_blank">GitHub Repository</a></li>
+                        <li><a href="https://github.com/itcodehery/Project_Directory_2/issues" target="_blank">Report Issues</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 dir2 Project. Built with ❤️ for Windows developers.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
