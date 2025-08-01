@@ -50,6 +50,10 @@ pub fn execute_command(
         Command::FindExact {
             filename: _filename,
         } => {
+            println!(
+                "FE > System-wide Search: Searching for {}...",
+                _filename.to_string().yellow()
+            );
             execute_find_exact(&_filename)
             // return Ok(String::from("Executed: Find Exact"))
         }
@@ -141,7 +145,7 @@ pub fn execute_list_all_cmd() -> Result<String, String> {
 
     let meta_commands = [
         ("CLS | /C", "Clear Screen"),
-        ("LS", "Lists Commands"),
+        ("LC", "Lists Commands"),
         ("WD", "Watch Directory"),
         ("LD", "List Directory"),
         ("DD", "Dodge Directory"),
@@ -237,7 +241,7 @@ pub fn execute_dodge_directory(sys_state: &mut FileSystemState) -> Result<String
         }
         None => {
             println!(
-                "Error: {}",
+                "Error: {} If multiple drives exist, use CD to Switch Drives.",
                 "Cannot dodge Root Directory!".red().to_string()
             );
             Ok(String::from("Failed: Dodge Directory"))
@@ -606,10 +610,19 @@ pub fn execute_fav_set(
     file_system_state: &mut FileSystemState,
     favorites_manager: &mut FavoritesManager,
 ) -> Result<String, String> {
-    let current_state = file_system_state
-        .get_current_state()
-        .clone()
-        .expect("Couldn't get current state");
+    let current_state: PathBuf;
+    match file_system_state.get_current_state().clone() {
+        Some(state) => {
+            current_state = state;
+        }
+        None => {
+            println!(
+                "ERROR: {}",
+                "Couldn't get current STATE. STATE might be empty.".red()
+            );
+            return Ok(String::from(""));
+        }
+    };
     let favs = favorites_manager.get_all();
     if favs.is_empty() {
         let new_fav = Favorite::from(current_state.clone());

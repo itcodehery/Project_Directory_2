@@ -1,3 +1,5 @@
+// use std::fmt::format;
+
 use colored::Colorize;
 
 use crate::search::SearchEngine;
@@ -46,10 +48,6 @@ pub enum Command {
 pub fn parse_command(input: &str) -> Result<Command, String> {
     let tokens = tokenize(input)?;
 
-    if tokens.is_empty() {
-        return Err("Emp".to_string());
-    }
-
     return match tokens[0].to_uppercase().as_str() {
         // Meta Commands
         "LC" => Ok(Command::ListCommands),
@@ -75,8 +73,6 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
         _ => parse_unknown(&tokens),
     };
 }
-
-
 
 fn tokenize(input: &str) -> Result<Vec<String>, String> {
     let mut tokens = Vec::new();
@@ -145,21 +141,17 @@ fn parse_list_directory(tokens: &[String]) -> Result<Command, String> {
 
 fn parse_change_drive(tokens: &Vec<String>) -> Result<Command, String> {
     if tokens.len() != 2 {
-        return Err("Expected CD <drive>".to_string())
+        return Err(format!("Expected {}", "CD <drive>".red()));
     }
-    return Ok(Command::ChangeDrive {drive: tokens[1].to_uppercase()});
-
+    return Ok(Command::ChangeDrive {
+        drive: tokens[1].to_uppercase(),
+    });
 }
 fn parse_select(tokens: &[String]) -> Result<Command, String> {
     if tokens.len() < 4 {
         return Err("SELECT requires: SELECT \"Filename\" FROM \"Directory\""
             .red()
             .to_string());
-    }
-
-    // Check for FROM keyword
-    if tokens[2].to_lowercase() != "from" {
-        return Err("Expected FROM keyword after file name.".red().to_string());
     }
 
     Ok(Command::Select {
@@ -237,7 +229,8 @@ fn parse_find_exact(tokens: &[String]) -> Result<Command, String> {
     }
     Err(
         "Expected FIND EXACT or FE \"Filename\", Type LC to view a list of available commands."
-            .red().to_string(),
+            .red()
+            .to_string(),
     )
 }
 
@@ -316,8 +309,11 @@ fn parse_fav(tokens: &[String]) -> Result<Command, String> {
                 index: match tokens[2].parse::<usize>() {
                     Ok(idx) => idx,
                     Err(_) => {
-                        println!("{}: Index out of bounds!","ERROR".red());
-                        return Ok(Command::Unknown {command:"Invalid Fav Index".to_string()}); }
+                        println!("{}: Index out of bounds!", "ERROR".red());
+                        return Ok(Command::Unknown {
+                            command: "Invalid Fav Index".to_string(),
+                        });
+                    }
                 },
             })
         }
@@ -342,7 +338,10 @@ fn parse_run(tokens: &[String]) -> Result<Command, String> {
                     Ok(idx) => idx,
                     Err(_) => {
                         println!("ERROR: Index out of bounds!");
-                        return Ok(Command::Unknown {command:"Invalid Fav Index".to_string()}); }
+                        return Ok(Command::Unknown {
+                            command: "Invalid Fav Index".to_string(),
+                        });
+                    }
                 },
             }),
             _ => Err("Expected RUN FAV <index> or RF <index>".red().to_string()),
