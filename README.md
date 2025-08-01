@@ -5,6 +5,7 @@
 A Rust-based file system / terminal that reimagines file interaction through SQL-like commands and a Single-file state system. Navigate, select, and execute files using familiar database query syntax.
 
 ![DIR2 Home](images/main.png)
+
 **Key Features:**
 
 - **SQL-style file selection**: `SELECT "script.py" FROM ~/projects/` to load files into state
@@ -29,7 +30,7 @@ Uses the `rust_search` module for system-wide search integration for Windows.
 1. **Clone the repository:**
   ```bash
   git clone <repository-url>
-  cd dir2
+  cd directory_2
   ```
 
 Build the project:
