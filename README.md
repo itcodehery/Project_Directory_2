@@ -1,10 +1,16 @@
-
 ![DIR2 Banner](images/clean_banner.png)
+
 ## dir2 (Directory 2.0) — An SQL-Inspired File System Interface for Windows
 
 A Rust-based file system / terminal that reimagines file interaction through SQL-like commands and a Single-file state system. Navigate, select, and execute files using familiar database query syntax.
 
 ![DIR2 Home](images/main.png)
+
+## [Documentation Website](https://itcodehery.github.io/Project_Directory_2/)
+
+Thank you to [Somnath Chaudhary](https://itcodehery.github.io/Project_Directory_2/) for creating the documentation website.
+
+---
 
 **Key Features:**
 
@@ -21,6 +27,7 @@ Uses the `rust_search` module for system-wide search integration for Windows.
 ## Building the Project
 
 **Prerequisites:**
+
 - Rust toolchain installed (visit [rustup.rs](https://rustup.rs/) for installation)
 - Windows 10/11 operating system
 - Git (for cloning the repository)
@@ -28,34 +35,40 @@ Uses the `rust_search` module for system-wide search integration for Windows.
 **Build Steps:**
 
 1. **Clone the repository:**
-  ```bash
-  git clone <repository-url>
-  cd directory_2
-  ```
+
+```bash
+git clone <repository-url>
+cd directory_2
+```
 
 Build the project:
 
 ```bash
 cargo build --release
 ```
+
 Run the application:
+
 ```bash
 cargo run --release
 ```
+
 Install globally (optional):
+
 ```bash
 cargo install --path .
 ```
+
 This installs dir2 to your Cargo bin directory, making it available system-wide.
 
 **Development Build**: For development and testing, you can use the debug build which compiles faster:
+
 ```bash
 cargo build
 cargo run
 ```
+
 **Dependencies**: All required dependencies, including the rust_search module, will be automatically downloaded and compiled by Cargo during the build process.
-
-
 
 **Example Usage:**
 
@@ -66,6 +79,7 @@ cargo run
 ![DIR2 Commands List](images/commands_list.png)
 
 _Meta Commands:_
+
 - **CLS | /C :** Clear Screen
 - **LC :** Lists Commands
 - **WD :** Watch Directory
@@ -75,6 +89,7 @@ _Meta Commands:_
 - **EXIT | /E :** Exit Terminal
 
 _State Commands:_
+
 - **SELECT filename.ext FROM directory :** Sets <filename.ext> file as current STATE
 - **VIEW STATE | VS :** To view current STATE
 - **DROP STATE | DS :** Drops the current STATE
@@ -82,12 +97,14 @@ _State Commands:_
 - **RUN STATE | RS :** Runs the file or script present in the current STATE
 
 _Favorites Commands:_
+
 - **FAV VIEW :** View all Favorites as a List
 - **FAV RM <index> :** Removes <filename> from favorites
 - **FAV SET STATE :** Sets current state as latest favorite
 - **RUN FAV <index> :** Runs the file at the index of the Favorites list
 
 Search Commands:
+
 - **FIND EXACT <query> | FE <query> :** Performs a System-wide File search on the Query, returns the list of Directories.
 - **SEARCH GOOGLE <query> | S G <query> :** Performs a Web Query using Google as the search engine.
 - **SEARCH DDG <query> | S D <query> :** Performs a Web Query using DuckDuckGo as the search engine.
