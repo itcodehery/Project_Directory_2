@@ -8,7 +8,7 @@ A Rust-based file system / terminal that reimagines file interaction through SQL
 
 ## [Documentation Website](https://itcodehery.github.io/Project_Directory_2/)
 
-Thank you to [Somnath Chaudhary](https://itcodehery.github.io/Project_Directory_2/) for creating the documentation website.
+Thank you to [Somnath Chaudhary](https://github.com/som-28) for creating the documentation website.
 
 ---
 
