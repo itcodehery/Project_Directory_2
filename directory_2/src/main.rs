@@ -1,5 +1,4 @@
 use std::path::PathBuf;
-
 mod commands;
 mod config;
 mod favorites;

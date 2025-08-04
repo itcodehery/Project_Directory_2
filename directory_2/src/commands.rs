@@ -343,7 +343,7 @@ pub fn execute_file(file_path: &PathBuf) -> Result<String, String> {
             Ok(_child) => {
                 println!(
                     "Opening STATE with default application: {}",
-                    file_path.display()
+                    file_path.display().to_string().green()
                 );
                 Ok(format!(
                     "Opened '{}' with default application",
@@ -366,7 +366,7 @@ pub fn execute_file(file_path: &PathBuf) -> Result<String, String> {
     } else {
         match std::process::Command::new(file_path).spawn() {
             Ok(_child) => {
-                println!("Running STATE: {}", file_path.display());
+                println!("Running STATE: {}", file_path.display().to_string().green());
                 Ok(format!("Started: {}", file_path.display()))
             }
             Err(e) => {
@@ -632,7 +632,7 @@ pub fn execute_fav_set(
             .expect("Couldn't add favorites to Favorites Manager!");
         println!(
             "Added STATE {} to Favorites. Use FAV VIEW to view Favorites list.",
-            current_state.display().to_string().yellow()
+            current_state.display().to_string().green()
         );
         return Ok(String::from("Completed FAV SET"));
     }
@@ -646,7 +646,7 @@ pub fn execute_fav_set(
             .expect("Couldn't add favorites to Favorite Manager!");
         println!(
             "Added STATE {} to Favorites Manager!",
-            current_state.display()
+            current_state.display().to_string().green()
         );
         return Ok(String::from("Completed FAV SET"));
     }
