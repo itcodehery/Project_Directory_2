@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 mod commands;
+mod completion;
 mod config;
 mod favorites;
 mod file_system_state;
@@ -9,10 +10,13 @@ mod parser;
 mod search;
 
 use crate::commands::execute_command;
+use crate::completion::Dir2Helper;
 use colored::Colorize;
 use favorites::FavoritesManager;
 use file_system_state::FileSystemState;
 use parser::parse_command;
+use rustyline::error::ReadlineError;
+use rustyline::{CompletionType, Config, Editor};
 fn main() {
     // Dependency Injection of the State Variable
     let mut current_file_sys_state: FileSystemState = FileSystemState::new();
@@ -34,31 +38,64 @@ fn terminal_boilerplate(sys_state: &FileSystemState) {
 }
 
 fn command_handler(sys_state: &mut FileSystemState, favorites_manager: &mut FavoritesManager) {
+    let config = Config::builder()
+        .history_ignore_space(true)
+        .completion_type(CompletionType::List)
+        .build();
+        
+    let mut rl = Editor::with_config(config).expect("Failed to create readline editor");
+    rl.set_helper(Some(Dir2Helper::new()));
+    
+    // Load command history if it exists
+    let _ = rl.load_history("dir2_history.txt");
+    
     loop {
-        let mut command: String = String::new();
-        eprint!(
-            "{}{}>",
-            "DIR2@".green(),
+        let prompt = format!(
+            "DIR2@{}> ",
             trim_quotes(sys_state.get_current_path()).to_string_lossy()
         );
-        std::io::stdin().read_line(&mut command).unwrap();
-        let command: String = command.trim().to_string();
-        if command.is_empty() {
-            continue;
-        }
-        let tokens = parse_command(&command);
-        match tokens {
-            Ok(command) => {
-                let res = execute_command(command, sys_state, favorites_manager);
-                if res.unwrap().to_uppercase() == "EXITED!" {
-                    break;
+        
+        let readline = rl.readline(&prompt);
+        match readline {
+            Ok(line) => {
+                let command = line.trim().to_string();
+                if command.is_empty() {
+                    continue;
+                }
+                
+                // Add command to history
+                rl.add_history_entry(command.as_str()).ok();
+                
+                let tokens = parse_command(&command);
+                match tokens {
+                    Ok(command) => {
+                        let res = execute_command(command, sys_state, favorites_manager);
+                        if res.unwrap().to_uppercase() == "EXITED!" {
+                            break;
+                        }
+                    }
+                    Err(error) => {
+                        println!("Error: {}", error);
+                    }
                 }
             }
-            Err(error) => {
-                println!("Error: {}", error);
+            Err(ReadlineError::Interrupted) => {
+                println!("CTRL-C");
+                continue;
+            }
+            Err(ReadlineError::Eof) => {
+                println!("CTRL-D");
+                break;
+            }
+            Err(err) => {
+                println!("Error: {:?}", err);
+                break;
             }
         }
     }
+    
+    // Save command history
+    let _ = rl.save_history("dir2_history.txt");
 }
 
 fn trim_quotes(path: &PathBuf) -> PathBuf {
