@@ -15,6 +15,8 @@ pub enum Command {
     ClearState,
     RunState,
     MetaState,
+    IndexStats,
+    ListDirs,
     FindExact {
         filename: String,
     },
@@ -64,6 +66,8 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
         "DROP" | "DS" => parse_drop_state(&tokens),
         "RUN" | "RS" => parse_run(&tokens),
         "META" => parse_meta_state(&tokens),
+        "INDEX" => parse_index_stats(&tokens),
+        "LISTDIRS" => parse_list_dirs(&tokens),
         // Favorite Commands
         "RF" => parse_run(&tokens),
         "FAV" => parse_fav(&tokens),
@@ -193,6 +197,28 @@ fn parse_meta_state(tokens: &[String]) -> Result<Command, String> {
     } else {
         Err("Unknown META or STATE keyword.".red().to_string())
     };
+}
+
+fn parse_index_stats(tokens: &[String]) -> Result<Command, String> {
+    if tokens.len() == 1 && tokens[0].to_uppercase() == "INDEX" {
+        return Ok(Command::IndexStats);
+    }
+    Err(
+        "Expected INDEX. Type LC to view a list of available commands."
+            .red()
+            .to_string(),
+    )
+}
+
+fn parse_list_dirs(tokens: &[String]) -> Result<Command, String> {
+    if tokens.len() == 1 && tokens[0].to_uppercase() == "LISTDIRS" {
+        return Ok(Command::ListDirs);
+    }
+    Err(
+        "Expected LISTDIRS. Type LC to view a list of available commands."
+            .red()
+            .to_string(),
+    )
 }
 
 fn parse_drop_state(tokens: &[String]) -> Result<Command, String> {
