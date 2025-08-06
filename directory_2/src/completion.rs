@@ -41,8 +41,8 @@ impl Dir2Helper {
     }
 
     pub fn refresh_index_if_needed(&mut self) {
-        // Refresh index every 30 seconds
-        if self.file_index.needs_refresh(Duration::from_secs(30)) {
+        // Refresh index every 5 minutes instead of 30 seconds to reduce resource usage
+        if self.file_index.needs_refresh(Duration::from_secs(300)) {
             let _ = self.file_index.scan_directory();
         }
     }

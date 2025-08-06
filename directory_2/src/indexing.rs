@@ -47,6 +47,15 @@ impl FileIndex {
     }
 
     fn scan_recursive(&mut self, path: &Path) -> Result<(), std::io::Error> {
+        self.scan_recursive_with_depth(path, 0)
+    }
+
+    fn scan_recursive_with_depth(&mut self, path: &Path, depth: usize) -> Result<(), std::io::Error> {
+        // Limit recursion depth to 3 levels to reduce resource usage
+        if depth > 3 {
+            return Ok(());
+        }
+
         if let Ok(entries) = fs::read_dir(path) {
             for entry in entries.flatten() {
                 let path = entry.path();
@@ -54,6 +63,10 @@ impl FileIndex {
                 // Skip hidden files and directories (starting with .)
                 if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
                     if name.starts_with('.') {
+                        continue;
+                    }
+                    // Skip common large directories to save resources
+                    if matches!(name, "node_modules" | "target" | ".git" | "dist" | "build" | "__pycache__") {
                         continue;
                     }
                 }
@@ -69,15 +82,18 @@ impl FileIndex {
                         .and_then(|n| n.to_str())
                         .unwrap_or_default()
                         .to_string(),
+                    #[allow(dead_code)]
                     is_directory: metadata.is_dir(),
+                    #[allow(dead_code)]
                     size: metadata.len(),
+                    #[allow(dead_code)]
                     modified: metadata.modified().ok(),
                 };
 
                 if metadata.is_dir() {
                     self.directories.push(file_info);
-                    // Recursively scan subdirectories
-                    let _ = self.scan_recursive(&path);
+                    // Recursively scan subdirectories with depth limit
+                    let _ = self.scan_recursive_with_depth(&path, depth + 1);
                 } else {
                     self.files.push(file_info);
                 }
