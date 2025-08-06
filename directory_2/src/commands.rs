@@ -47,6 +47,12 @@ pub fn execute_command(
             execute_meta_state(file_system_state)
             // return Ok(String::from("Executed: Meta State"))
         }
+        Command::IndexStats => {
+            Ok("Index stats are handled in the main loop.".to_string())
+        }
+        Command::ListDirs => {
+            Ok("List dirs are handled in the main loop.".to_string())
+        }
         Command::FindExact {
             filename: _filename,
         } => {
@@ -146,6 +152,7 @@ pub fn execute_list_all_cmd() -> Result<String, String> {
     let meta_commands = [
         ("CLS | /C", "Clear Screen"),
         ("LC", "Lists Commands"),
+        ("INDEX", "Show file index statistics"),
         ("WD", "Watch Directory"),
         ("LD", "List Directory"),
         ("DD", "Dodge Directory"),
