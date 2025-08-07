@@ -6,7 +6,15 @@ use crate::search::SearchEngine;
 
 #[derive(Debug)]
 pub enum Command {
+    // Meta Commands
     ListCommands,
+    ClearScreen,
+    Exit,
+    Unknown {
+        command: String,
+    },
+
+    // State Management Commands
     Select {
         filename: String,
         directory: String,
@@ -15,24 +23,8 @@ pub enum Command {
     ClearState,
     RunState,
     MetaState,
-    FindExact {
-        filename: String,
-    },
-    Search {
-        engine: SearchEngine,
-        filename: String,
-    },
-    FavView,
-    FavSet,
-    FavRm {
-        index: usize,
-    },
-    RunFav {
-        index: usize,
-    },
-    Unknown {
-        command: String,
-    },
+
+    // Directory Management Commands
     DodgeDirectory,
     WatchDirectory {
         directory: String,
@@ -41,8 +33,46 @@ pub enum Command {
     ChangeDrive {
         drive: String,
     },
-    ClearScreen,
-    Exit,
+    MakeDirectory {
+        directory: String,
+    },
+    RemoveDirectory {
+        directory: String,
+    },
+    RenameDirectory {
+        old_directory: String,
+        new_directory: String,
+    },
+    // File Management Commands
+    MakeFile {
+        filename: String,
+    },
+    RemoveFile {
+        filename: String,
+    },
+    RenameFile {
+        old_filename: String,
+        new_filename: String,
+    },
+
+    // Search Commands
+    FindExact {
+        filename: String,
+    },
+    Search {
+        engine: SearchEngine,
+        filename: String,
+    },
+
+    // Favorite Commands
+    FavView,
+    FavSet,
+    FavRm {
+        index: usize,
+    },
+    RunFav {
+        index: usize,
+    },
 }
 
 pub fn parse_command(input: &str) -> Result<Command, String> {
@@ -58,6 +88,14 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
         "WD" => parse_watch_directory(&tokens),
         "LD" => parse_list_directory(&tokens),
         "CD" => parse_change_drive(&tokens),
+        "MKDIR" => parse_make_directory(&tokens),
+        "RMDIR" => parse_remove_directory(&tokens),
+        "RENDIR" => parse_rename_directory(&tokens),
+        // File Management Commands
+        "MKFILE" => parse_make_file(&tokens),
+        "RMFILE" => parse_remove_file(&tokens),
+        "RENFILE" => parse_rename_file(&tokens),
+
         // STATE Commands
         "SELECT" => parse_select(&tokens),
         "VIEW" | "VS" => parse_view(&tokens),
@@ -137,6 +175,70 @@ fn parse_list_directory(tokens: &[String]) -> Result<Command, String> {
         return Err("Expected no arguments with LD Command".red().to_string());
     }
     return Ok(Command::ListDirectory);
+}
+
+fn parse_make_directory(tokens: &[String]) -> Result<Command, String> {
+    if tokens.len() != 2 {
+        return Err(format!("Expected {}", "MKDIR <directory>".red()));
+    }
+    let directory = parse_filename(tokens[1].clone());
+    return Ok(Command::MakeDirectory { directory });
+}
+
+fn parse_remove_directory(tokens: &[String]) -> Result<Command, String> {
+    if tokens.len() != 2 {
+        return Err(format!("Expected {}", "RMDIR <directory>".red()));
+    }
+    let directory = parse_filename(tokens[1].clone());
+    return Ok(Command::RemoveDirectory { directory });
+}
+
+fn parse_rename_directory(tokens: &[String]) -> Result<Command, String> {
+    if tokens.len() != 3 {
+        return Err(format!(
+            "Expected {}",
+            "RENDIR <old_directory> <new_directory>".red()
+        ));
+    }
+    let old_directory = parse_filename(tokens[1].clone());
+    let new_directory = parse_filename(tokens[2].clone());
+    return Ok(Command::RenameDirectory {
+        old_directory,
+        new_directory,
+    });
+}
+
+// File Management Commands
+
+fn parse_make_file(tokens: &[String]) -> Result<Command, String> {
+    if tokens.len() != 2 {
+        return Err(format!("Expected {}", "MKFILE <filename>".red()));
+    }
+    let filename = parse_filename(tokens[1].clone());
+    return Ok(Command::MakeFile { filename });
+}
+
+fn parse_remove_file(tokens: &[String]) -> Result<Command, String> {
+    if tokens.len() != 2 {
+        return Err(format!("Expected {}", "RMFILE <filename>".red()));
+    }
+    let filename = parse_filename(tokens[1].clone());
+    return Ok(Command::RemoveFile { filename });
+}
+
+fn parse_rename_file(tokens: &[String]) -> Result<Command, String> {
+    if tokens.len() != 3 {
+        return Err(format!(
+            "Expected {}",
+            "RENFILE <old_filename> <new_filename>".red()
+        ));
+    }
+    let old_filename = parse_filename(tokens[1].clone());
+    let new_filename = parse_filename(tokens[2].clone());
+    return Ok(Command::RenameFile {
+        old_filename,
+        new_filename,
+    });
 }
 
 fn parse_change_drive(tokens: &Vec<String>) -> Result<Command, String> {

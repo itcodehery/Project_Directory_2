@@ -1,21 +1,28 @@
 use std::path::PathBuf;
 mod commands;
+mod completion;
 mod config;
+mod delegation;
 mod favorites;
 mod file_system_state;
 mod filesystem;
-mod indexing;
+mod indexer;
 mod parser;
 mod search;
 
 use crate::commands::execute_command;
 use colored::Colorize;
+use delegation::execute_with_piping;
 use favorites::FavoritesManager;
 use file_system_state::FileSystemState;
+use indexer::index_current_directory;
 use parser::parse_command;
+
 fn main() {
     // Dependency Injection of the State Variable
     let mut current_file_sys_state: FileSystemState = FileSystemState::new();
+    // Index current directory
+    index_current_directory(&mut current_file_sys_state);
     let mut fav_manager = FavoritesManager::new().expect("Failed to initialize FavoritesManager");
     println!("\x1B[2J\x1B[1;1H");
     terminal_boilerplate(&current_file_sys_state);
@@ -46,10 +53,33 @@ fn command_handler(sys_state: &mut FileSystemState, favorites_manager: &mut Favo
         if command.is_empty() {
             continue;
         }
+        if command.starts_with("CML ") || command.starts_with("cml ") {
+            let command = command.replace("CML", "");
+            let command = command.replace("cml", "");
+            let command = command.trim();
+
+            match delegation::execute_using_cmd(&command) {
+                Ok(_) => continue,
+                Err(e) => println!("Error: {}", e),
+            }
+            continue;
+        }
+
+        if command.contains('|') {
+            match execute_with_piping(&command) {
+                Ok(_) => continue,
+                Err(e) => println!("Error: {}", e),
+            }
+            continue;
+        }
         let tokens = parse_command(&command);
         match tokens {
             Ok(command) => {
                 let res = execute_command(command, sys_state, favorites_manager);
+                if res.is_err() {
+                    println!("{}: {}", "Error".red(), res.unwrap_err());
+                    continue;
+                }
                 if res.unwrap().to_uppercase() == "EXITED!" {
                     break;
                 }

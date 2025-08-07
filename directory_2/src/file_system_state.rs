@@ -4,6 +4,7 @@ use std::path::PathBuf;
 #[derive(Debug)]
 pub struct FileSystemState {
     state: Option<PathBuf>,
+    index: Vec<String>,
     current_path: PathBuf,
 }
 
@@ -11,6 +12,7 @@ impl FileSystemState {
     pub fn new() -> Self {
         Self {
             state: None,
+            index: Vec::new(),
             current_path: env::current_dir().unwrap_or_else(|_| PathBuf::from("/")),
         }
     }
@@ -21,6 +23,14 @@ impl FileSystemState {
 
     pub fn get_current_path(&self) -> &PathBuf {
         &self.current_path
+    }
+
+    pub fn get_all_indexed(&self) -> &Vec<String> {
+        &self.index
+    }
+
+    pub fn set_index(&mut self, index: Vec<String>) {
+        self.index = index;
     }
 
     pub fn set_current_state(&mut self, new_path: PathBuf) {

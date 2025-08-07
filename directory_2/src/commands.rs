@@ -15,13 +15,8 @@ pub fn execute_command(
     favorites_manager: &mut FavoritesManager,
 ) -> Result<String, String> {
     match command {
+        // Meta/System Commands
         Command::ListCommands => execute_list_all_cmd(),
-        Command::DodgeDirectory => execute_dodge_directory(file_system_state),
-        Command::WatchDirectory {
-            directory: _directory,
-        } => execute_watch_directory(file_system_state, &_directory),
-        Command::ListDirectory => execute_list_directory(file_system_state),
-        Command::ChangeDrive { drive: _drive } => execute_change_drive(file_system_state, _drive),
         Command::ClearScreen => {
             // Windows-specific
             std::process::Command::new("cmd")
@@ -31,22 +26,50 @@ pub fn execute_command(
             return Ok(String::from("Executed: Clear Screen"));
         }
         Command::Exit => Ok("exited!".to_string()),
+        Command::Unknown { command } => {
+            return Ok(String::from(format!(
+                "Unexecuted: Unknown command {}",
+                command
+            )));
+        }
+
+        // Directory Navigation Commands
+        Command::DodgeDirectory => execute_dodge_directory(file_system_state),
+        Command::WatchDirectory {
+            directory: _directory,
+        } => execute_watch_directory(file_system_state, &_directory),
+        Command::ListDirectory => execute_list_directory(file_system_state),
+        Command::ChangeDrive { drive: _drive } => execute_change_drive(file_system_state, _drive),
+        Command::MakeDirectory { directory } => {
+            execute_make_directory(file_system_state, &directory)
+        }
+        Command::RemoveDirectory { directory } => {
+            execute_remove_directory(file_system_state, &directory)
+        }
+        Command::RenameDirectory {
+            old_directory,
+            new_directory,
+        } => execute_rename_directory(file_system_state, &old_directory, &new_directory),
+
+        // File Management Commands
+        Command::MakeFile { filename } => execute_make_file(file_system_state, &filename),
+        Command::RemoveFile { filename } => execute_remove_file(file_system_state, &filename),
+        Command::RenameFile {
+            old_filename,
+            new_filename,
+        } => execute_rename_file(file_system_state, &old_filename, &new_filename),
+
+        // State Management Commands
         Command::Select {
             filename: _filename,
             directory: _directory,
-        } => {
-            // return Ok(String::from("Executed: Select"))
-            execute_select(file_system_state, _filename, _directory)
-        }
-        Command::ViewState => {
-            execute_view_state(file_system_state)
-            // return Ok(String::from("Executed: View State"))
-        }
+        } => execute_select(file_system_state, _filename, _directory),
+        Command::ViewState => execute_view_state(file_system_state),
         Command::ClearState => execute_clear_state(file_system_state),
-        Command::MetaState => {
-            execute_meta_state(file_system_state)
-            // return Ok(String::from("Executed: Meta State"))
-        }
+        Command::MetaState => execute_meta_state(file_system_state),
+        Command::RunState => execute_run_state(file_system_state),
+
+        // Search Commands
         Command::FindExact {
             filename: _filename,
         } => {
@@ -55,38 +78,19 @@ pub fn execute_command(
                 _filename.to_string().yellow()
             );
             execute_find_exact(&_filename)
-            // return Ok(String::from("Executed: Find Exact"))
         }
         Command::Search {
             engine,
             filename: _filename,
         } => execute_search(&engine, &_filename),
-        Command::RunState => {
-            execute_run_state(file_system_state)
-            // return Ok(String::from("Executed: Run State"))
-        }
-        Command::FavView => {
-            execute_fav_view(favorites_manager)
-            // return Ok(String::from("Executed: Fav View"))
-        }
+
+        // Favorites Management Commands
+        Command::FavView => execute_fav_view(favorites_manager),
         Command::FavRm { index: _index } => execute_remove_fav(_index, favorites_manager),
-        Command::FavSet => {
-            execute_fav_set(file_system_state, favorites_manager)
-            // return Ok(String::from("Executed: Fav Set"))
-        }
-        Command::RunFav { index: _index } => {
-            execute_run_fav(_index, favorites_manager)
-            // return Ok(String::from("Executed: Run Fav"))
-        }
-        Command::Unknown { command } => {
-            return Ok(String::from(format!(
-                "Unexecuted: Unknown command {}",
-                command
-            )));
-        }
+        Command::FavSet => execute_fav_set(file_system_state, favorites_manager),
+        Command::RunFav { index: _index } => execute_run_fav(_index, favorites_manager),
     }
 }
-
 pub fn execute_change_drive(
     file_system_state: &mut FileSystemState,
     drive: String,
@@ -138,6 +142,7 @@ pub fn execute_list_all_cmd() -> Result<String, String> {
         "DIR2 Commands (All Case-insensitive)",
         "---------------------",
         "Meta Commands:",
+        "Directory/File Commands:",
         "State Commands:",
         "Favorites Commands:",
         "Search Commands:",
@@ -145,12 +150,25 @@ pub fn execute_list_all_cmd() -> Result<String, String> {
 
     let meta_commands = [
         ("CLS | /C", "Clear Screen"),
+        ("CML <command>", "Executes a command in the terminal"),
         ("LC", "Lists Commands"),
         ("WD", "Watch Directory"),
         ("LD", "List Directory"),
         ("DD", "Dodge Directory"),
         ("CD", "Change Drive"),
         ("EXIT | /E", "Exit Terminal"),
+    ];
+
+    let dir_file_commands = [
+        ("MKDIR <directory>", "Creates a directory"),
+        ("RMDIR <directory>", "Removes a directory"),
+        (
+            "RENDIR <old_directory> <new_directory>",
+            "Renames a directory",
+        ),
+        ("MKFILE <filename>", "Creates a file"),
+        ("RMFILE <filename>", "Removes a file"),
+        ("RENFILE <old_filename> <new_filename>", "Renames a file"),
     ];
 
     let state_commands = [
@@ -207,16 +225,21 @@ pub fn execute_list_all_cmd() -> Result<String, String> {
     }
 
     println!("\n{}", titles[3]);
+    for (command, description) in dir_file_commands.iter() {
+        println!("{} : {}", command.bright_cyan(), description);
+    }
+
+    println!("\n{}", titles[4]);
     for (command, description) in state_commands.iter() {
         println!("{} : {}", command.yellow(), description);
     }
 
-    println!("\n{}", titles[4]);
+    println!("\n{}", titles[5]);
     for (command, description) in fav_commands.iter() {
         println!("{} : {}", command.green(), description);
     }
 
-    println!("\n{}", titles[5]);
+    println!("\n{}", titles[6]);
     for (command, description) in search_commands.iter() {
         println!("{} : {}", command.bright_purple(), description);
     }
@@ -462,6 +485,111 @@ pub fn execute_list_directory(sys_state: &mut FileSystemState) -> Result<String,
     }
     return Ok(String::from("Executed: List Directory"));
 }
+
+fn execute_make_directory(
+    sys_state: &mut FileSystemState,
+    directory: &String,
+) -> Result<String, String> {
+    let current_path = sys_state.get_current_path();
+    let new_path = current_path.join(directory);
+    if filesystem::path_exists(&new_path) {
+        return Err(format!("Directory '{}' already exists", directory));
+    }
+    if filesystem::is_dir(&new_path) {
+        return Err(format!("'{}' is already a directory", directory));
+    }
+    if filesystem::create_dir(&new_path) {
+        sys_state.set_current_directory(new_path);
+        return Ok(format!("Created directory '{}'", directory));
+    }
+    return Err(format!("Failed to create directory '{}'", directory));
+}
+
+fn execute_remove_directory(
+    sys_state: &mut FileSystemState,
+    directory: &String,
+) -> Result<String, String> {
+    let current_path = sys_state.get_current_path();
+    let new_path = current_path.join(directory);
+    if filesystem::is_dir(&new_path) {
+        if filesystem::remove_dir(&new_path) {
+            return Ok(format!("Removed directory '{}'", directory));
+        } else {
+            return Err(format!("Failed to remove directory '{}'", directory));
+        }
+    }
+    return Err(format!("Failed to create directory '{}'", directory));
+}
+
+fn execute_rename_directory(
+    sys_state: &mut FileSystemState,
+    directory: &String,
+    new_name: &String,
+) -> Result<String, String> {
+    let current_path = sys_state.get_current_path();
+    let new_path = current_path.join(directory);
+    if filesystem::path_exists(&new_path) {
+        if filesystem::is_dir(&new_path) {
+            if filesystem::rename(&new_path, &current_path.join(new_name)) {
+                return Ok(format!(
+                    "Renamed directory '{}' to '{}'",
+                    directory, new_name
+                ));
+            } else {
+                return Err(format!(
+                    "Failed to rename directory '{}' to '{}'",
+                    directory, new_name
+                ));
+            }
+        }
+    }
+    return Err(format!("Failed to create directory '{}'", directory));
+}
+
+fn execute_make_file(sys_state: &mut FileSystemState, file: &String) -> Result<String, String> {
+    let current_path = sys_state.get_current_path();
+    let new_path = current_path.join(file);
+    if filesystem::path_exists(&new_path) {
+        return Err(format!("File '{}' already exists", file));
+    }
+    if filesystem::create_file(&new_path) {
+        return Ok(format!("Created file '{}'", file));
+    }
+    return Err(format!("Failed to create file '{}'", file));
+}
+
+fn execute_remove_file(sys_state: &mut FileSystemState, file: &String) -> Result<String, String> {
+    let current_path = sys_state.get_current_path();
+    let new_path = current_path.join(file);
+    if filesystem::path_exists(&new_path) {
+        if filesystem::remove_file(&new_path) {
+            return Ok(format!("Removed file '{}'", file));
+        } else {
+            return Err(format!("Failed to remove file '{}'", file));
+        }
+    }
+    return Err(format!("Failed to remove file '{}'", file));
+}
+
+fn execute_rename_file(
+    sys_state: &mut FileSystemState,
+    file: &String,
+    new_name: &String,
+) -> Result<String, String> {
+    let current_path = sys_state.get_current_path();
+    let new_path = current_path.join(file);
+    if filesystem::path_exists(&new_path) {
+        return Err(format!("File '{}' already exists", file));
+    }
+    if filesystem::rename(&new_path, &current_path.join(new_name)) {
+        return Ok(format!("Renamed file '{}' to '{}'", file, new_name));
+    } else {
+        return Err(format!(
+            "Failed to rename file '{}' to '{}'",
+            file, new_name
+        ));
+    }
+}
 pub fn execute_meta_state(sys_state: &mut FileSystemState) -> Result<String, String> {
     let current_state = sys_state.get_current_state();
 
@@ -603,7 +731,10 @@ pub fn execute_fav_view(favorites_manager: &mut FavoritesManager) -> Result<Stri
             state.get_path().to_string_lossy()
         )
     }
-    println!("\nUse {} to run Favorite at index.","RUN FAV <index> or RF <index>".yellow());
+    println!(
+        "\nUse {} to run Favorite at index.",
+        "RUN FAV <index> or RF <index>".yellow()
+    );
     return Ok(String::from("Done!"));
 }
 

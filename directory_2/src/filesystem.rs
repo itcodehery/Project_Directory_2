@@ -66,6 +66,38 @@ pub fn is_executable(path: &PathBuf) -> bool {
     }
 }
 
+pub fn create_dir(path: &Path) -> bool {
+    fs::create_dir(path).is_ok()
+}
+
+pub fn remove_dir(path: &Path) -> bool {
+    fs::remove_dir(path).is_ok()
+}
+
+pub fn rename(path: &Path, new_name: &Path) -> bool {
+    fs::rename(path, new_name).is_ok()
+}
+
+pub fn create_file(path: &Path) -> bool {
+    fs::write(path, "").is_ok()
+}
+
+pub fn remove_file(path: &Path) -> bool {
+    fs::remove_file(path).is_ok()
+}
+
+pub fn list_all_files_in_directory(path: &Path) -> Vec<String> {
+    let mut files: Vec<String> = Vec::new();
+    for entry in fs::read_dir(path).unwrap() {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        if path.is_file() {
+            files.push(path.to_string_lossy().to_string());
+        }
+    }
+    files
+}
+
 #[derive(Debug)]
 pub struct FileInfo {
     pub size: u64,
