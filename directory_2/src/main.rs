@@ -1,17 +1,18 @@
 use std::path::PathBuf;
 mod commands;
 mod completion;
-mod config;
 mod delegation;
 mod favorites;
 mod file_system_state;
 mod filesystem;
 mod indexer;
 mod parser;
+mod raw_input;
 mod search;
 
 use crate::commands::execute_command;
 use colored::Colorize;
+// use crossterm::terminal;
 use delegation::execute_with_piping;
 use favorites::FavoritesManager;
 use file_system_state::FileSystemState;
@@ -21,8 +22,7 @@ use parser::parse_command;
 fn main() {
     // Dependency Injection of the State Variable
     let mut current_file_sys_state: FileSystemState = FileSystemState::new();
-    // Index current directory
-    index_current_directory(&mut current_file_sys_state);
+
     let mut fav_manager = FavoritesManager::new().expect("Failed to initialize FavoritesManager");
     println!("\x1B[2J\x1B[1;1H");
     terminal_boilerplate(&current_file_sys_state);
@@ -48,7 +48,11 @@ fn command_handler(sys_state: &mut FileSystemState, favorites_manager: &mut Favo
             "DIR2@".green(),
             trim_quotes(sys_state.get_current_path()).to_string_lossy()
         );
-        std::io::stdin().read_line(&mut command).unwrap();
+        // Standard IO reads as a string. We require raw input for autocomplete purposes
+        // std::io::stdin().read_line(&mut command).unwrap();
+        // let raw_input = terminal::enable_raw_mode().unwrap();
+        let command = raw_input::read_line(&mut command, sys_state).expect("Couldn't read input!");
+        println!();
         let command: String = command.trim().to_string();
         if command.is_empty() {
             continue;

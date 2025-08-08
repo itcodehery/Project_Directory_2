@@ -464,8 +464,8 @@ fn parse_run(tokens: &[String]) -> Result<Command, String> {
 
 fn parse_unknown(tokens: &[String]) -> Result<Command, String> {
     println!(
-        "Unknown command. Type {} to view a list of available commands.",
-        "LC".yellow().to_string()
+        "Error: Unknown command.\nType {} to view a list of available commands or use {} to execute commands on your native shell.\n",
+        "LC".yellow().to_string(),"CML".yellow().to_string()
     );
     return Ok(Command::Unknown {
         command: tokens[0].to_uppercase(),

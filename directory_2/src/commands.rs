@@ -1,3 +1,4 @@
+use crate::indexer;
 use colored::Colorize;
 use std::path::{Path, PathBuf};
 
@@ -455,6 +456,13 @@ pub fn execute_watch_directory(
 
     // Update current directory
     sys_state.set_current_directory(sys_state.get_current_path().join(dir_path));
+
+    // Index current directory
+    indexer::index_current_directory(sys_state);
+
+    // Clear index
+    sys_state.clear_index();
+
     Ok(format!("Changed to directory: {}", directory))
 }
 

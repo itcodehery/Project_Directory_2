@@ -98,6 +98,16 @@ pub fn list_all_files_in_directory(path: &Path) -> Vec<String> {
     files
 }
 
+pub fn list_all_contents_in_directory(path: &Path) -> Vec<String> {
+    let mut contents: Vec<String> = Vec::new();
+    for entry in fs::read_dir(path).unwrap() {
+        let entry = entry.unwrap();
+        let path = entry.path();
+        contents.push(path.to_string_lossy().to_string());
+    }
+    contents
+}
+
 #[derive(Debug)]
 pub struct FileInfo {
     pub size: u64,
