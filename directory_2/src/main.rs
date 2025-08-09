@@ -10,8 +10,8 @@ mod parser;
 mod raw_input;
 mod search;
 
-use crate::commands::execute_command;
 use colored::Colorize;
+use commands::execute_command;
 // use crossterm::terminal;
 use delegation::execute_with_piping;
 use favorites::FavoritesManager;
