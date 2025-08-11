@@ -1,10 +1,14 @@
 ![DIR2 Banner](images/clean_banner.png)
 
-## dir2 (Directory 2.0) — An SQL-Inspired File System Interface for Windows
+## dir2 — An SQL-Inspired File System Interface for Windows
 
 A Rust-based file system / terminal that reimagines file interaction through SQL-like commands and a Single-file state system. Navigate, select, and execute files using familiar database query syntax.
 
 ![DIR2 Home](images/main.png)
+
+## Latest Version
+
+**Version 1.1.0** - Includes List-based Autocomplete, Native Shell Integration, File/Directory Manipulation Commands
 
 ## [Documentation Website](https://itcodehery.github.io/Project_Directory_2/)
 
@@ -19,6 +23,11 @@ Thank you to [Somnath Chaudhary](https://github.com/som-28) for creating the doc
 - **Quick favorites system**: Save frequently used files and executables for instant access
 - **Global file search**: Find exact file locations system-wide with `FINDEXACT`
 - **Direct execution**: Run selected files or favorites with simple commands
+
+**New Features!**
+- **List-based Autocomplete:** Get auto-complete recommendations on Directory/File names as you type!
+- **Native Shell Support:** Access your native shell (Powershell or CMD) within dir2 with a simple command `CML`.
+- **Directory/File Manip Commands**: Perform Create/Rename/Delete operations on Directories or Files without leaving dir2.
 
 Transform your command-line file management from traditional navigation to intuitive querying. Perfect for developers who think in SQL and want a more declarative approach to file system operations.
 
@@ -74,19 +83,29 @@ cargo run
 
 ![DIR2 Select Example](images/state_manip.png)
 
-**List of Commands Implemented (Pre-Release):**
+**List of Commands Implemented (v1.1.0):**
 
-![DIR2 Commands List](images/commands_list.png)
+![DIR2 Commands List 1](images/cmd_list1.png)
+![DIR2 Commands List 2](images/cmd_list2.png)
 
 _Meta Commands:_
 
 - **CLS | /C :** Clear Screen
+- **CML <command>** : Executes a command in the terminal
 - **LC :** Lists Commands
 - **WD :** Watch Directory
 - **LD :** List Directory
 - **DD :** Dodge Directory
 - **CD :** Change Drive
 - **EXIT | /E :** Exit Terminal
+
+_Directory/File Commands:_
+- **MKDIR <directory> :** Creates a directory 
+- **RMDIR <directory> :** Removes a directory 
+- **RENDIR <old_directory> <new_directory> :** Renames a directory 
+- **MKFILE <filename> :** Creates a file 
+- **RMFILE <filename> :** Removes a file 
+- **RENFILE <old_filename> <new_filename> :** Renames a file
 
 _State Commands:_
 
