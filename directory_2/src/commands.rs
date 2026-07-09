@@ -886,7 +886,31 @@ pub fn execute_search(engine: &str, query: &str) -> Result<String, String> {
             .expect("Couldn't launch ChatGPT!");
             Ok(format!("Opened '{}' with ChatGPT", query))
         }
-        _ => Err(String::from("Unsupported search engine. Use Google, DDG, ChatGPT, or Perplexity.")),
+        "CLAUDE" | "CL" => {
+            crate::cprintln!(
+                "\n{}: Searching using Claude...",
+                query.yellow()
+            );
+            open::that(format!(
+                "https://claude.ai/new?q={}",
+                query
+            ))
+            .expect("Couldn't launch Claude!");
+            Ok(format!("Opened '{}' with Claude", query))
+        }
+        "GEMINI" | "GM" => {
+            crate::cprintln!(
+                "\n{}: Searching using Gemini...",
+                query.yellow()
+            );
+            open::that(format!(
+                "https://gemini.google.com/app?q={}",
+                query
+            ))
+            .expect("Couldn't launch Gemini!");
+            Ok(format!("Opened '{}' with Gemini", query))
+        }
+        _ => Err(String::from("Unsupported search engine. Use Google, DDG, ChatGPT, Perplexity, Claude, or Gemini.")),
     };
 }
 

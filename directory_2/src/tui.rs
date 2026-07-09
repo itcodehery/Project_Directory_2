@@ -157,7 +157,17 @@ pub fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesManager
 
             let prompt = "> ".to_string();
             let display_text = format!("{}{}", prompt, input);
+            
+            let input_inner_width = input_rect.width.saturating_sub(2);
+            let cursor_pos = prompt.len() + cursor_index;
+            let input_scroll = if cursor_pos as u16 >= input_inner_width {
+                (cursor_pos as u16).saturating_sub(input_inner_width) + 1
+            } else {
+                0
+            };
+
             let input_widget = Paragraph::new(display_text)
+                .scroll((0, input_scroll))
                 .block(Block::default().borders(Borders::ALL).border_type(BorderType::Rounded));
             
             // Render input
@@ -166,7 +176,7 @@ pub fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesManager
 
             // Set cursor
             f.set_cursor_position(
-                (input_rect.x + 1 + prompt.len() as u16 + cursor_index as u16,
+                (input_rect.x + 1 + prompt.len() as u16 + cursor_index as u16 - input_scroll,
                  input_rect.y + 1)
             );
 

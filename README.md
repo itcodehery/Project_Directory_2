@@ -1,14 +1,14 @@
 ![DIR2 Banner](images/clean_banner.png)
 
-## dir2 — An SQL-Inspired File System Interface for Windows
+## dir2 — An SQL-Inspired Complete Shell
 
-A Rust-based file system / terminal that reimagines file interaction through SQL-like commands and a Single-file state system. Navigate, select, and execute files using familiar database query syntax.
+A Rust-based complete shell that reimagines file interaction and system operations through SQL-like commands and a Single-file state system. Navigate, select, and execute files and commands using familiar database query syntax alongside native shell capabilities.
 
 ![DIR2 Home](images/main.png)
 
 ## Latest Version
 
-**Version 1.1.0** - Includes List-based Autocomplete, Native Shell Integration, File/Directory Manipulation Commands
+**Version 2.0.0** - Complete TUI Overhaul & SQL Parsing Foundation
 
 ## [Documentation Website](https://itcodehery.github.io/Project_Directory_2/)
 
@@ -21,24 +21,22 @@ Thank you to [Somnath Chaudhary](https://github.com/som-28) for creating the doc
 - **SQL-style file selection**: `SELECT "script.py" FROM ~/projects/` to load files into state
 - **Stateful file management**: Single-file state system for focused workflow
 - **Quick favorites system**: Save frequently used files and executables for instant access
-- **Global file search**: Find exact file locations system-wide with `FINDEXACT`
 - **Direct execution**: Run selected files or favorites with simple commands
 
-**New Features!**
-- **List-based Autocomplete:** Get auto-complete recommendations on Directory/File names as you type!
-- **Native Shell Support:** Access your native shell (Powershell or CMD) within dir2 with a simple command `CML`.
-- **Directory/File Manip Commands**: Perform Create/Rename/Delete operations on Directories or Files without leaving dir2.
+**New Features in v2.0.0!**
+- **Complete TUI Overhaul:** Fully interactive Terminal User Interface powered by `ratatui` and `crossterm`.
+- **SQL Parsing Foundation:** Integrated `sqlparser` for primary parsing, enabling SQL query syntax with a seamless fallback to native shell commands.
+- **Rich File Tables:** Native `ls`, `la`, `ll` executions are rendered as gorgeous, rich tables via `comfy-table`.
+- **Improved UI/UX:** Persistent UI layout with dynamically centered input, powerline styled PWD banner, vertical scrollbar with mouse wheel support, and visual line dividers.
+- **Config & History:** New `CONFIG` (`RC`) command to open your configuration, and a `HISTORY` (`HIST`) command for log management.
 
-Transform your command-line file management from traditional navigation to intuitive querying. Perfect for developers who think in SQL and want a more declarative approach to file system operations.
-
-Uses the `rust_search` module for system-wide search integration for Windows.
+Transform your command-line experience from traditional navigation to intuitive querying. Perfect for developers who think in SQL and want a more declarative approach to complete shell operations.
 
 ## Building the Project
 
 **Prerequisites:**
 
 - Rust toolchain installed (visit [rustup.rs](https://rustup.rs/) for installation)
-- Windows 10/11 operating system
 - Git (for cloning the repository)
 
 **Build Steps:**
@@ -77,27 +75,49 @@ cargo build
 cargo run
 ```
 
-**Dependencies**: All required dependencies, including the rust_search module, will be automatically downloaded and compiled by Cargo during the build process.
+**Dependencies**: All required dependencies will be automatically downloaded and compiled by Cargo during the build process.
 
 **Example Usage:**
 
 ![DIR2 Select Example](images/state_manip.png)
 
-**List of Commands Implemented (v1.1.0):**
+**List of Commands Implemented (v2.0.0):**
 
 ![DIR2 Commands List 1](images/cmd_list1.png)
 ![DIR2 Commands List 2](images/cmd_list2.png)
 
 _Meta Commands:_
 
-- **CLS | /C :** Clear Screen
-- **CML <command>** : Executes a command in the terminal
+- **CLS | /C | CLEAR :** Clear Screen
+- **ECHO <text> :** Prints text to the terminal
+- **DOCS <cmd> :** Shows the comprehensive manual for a command
+- **CONFIG | RC :** Instantly open ~/.dir2rc in the default $EDITOR
+- **HISTORY | HIST :** View or restore command history
+- **ls | la | ll :** List files as rich tables (replaces native ls executions)
 - **LC :** Lists Commands
 - **WD :** Watch Directory
 - **LD :** List Directory
 - **DD :** Dodge Directory
 - **CD :** Change Drive
-- **EXIT | /E :** Exit Terminal
+- **EXIT | /E :** Exit Shell
+
+_Environment Commands:_
+
+- **EXPORT <VAR>=<value> :** Sets an environment variable
+- **UNSET <VAR> :** Removes an environment variable
+- **ENV :** Lists all environment variables
+
+_Alias Commands:_
+
+- **ALIAS <name>='<cmd>' :** Sets a command alias
+- **UNALIAS <name> :** Removes an alias
+- **ALIASES :** Lists all aliases
+
+_TUI Configuration:_
+
+- **TUIADD <command> :** Adds a command to the interactive whitelist
+- **TUIRM <command> :** Removes a command from the whitelist
+- **TUILS :** Lists all interactive whitelist commands
 
 _Directory/File Commands:_
 - **MKDIR <directory> :** Creates a directory 
@@ -124,11 +144,12 @@ _Favorites Commands:_
 
 Search Commands:
 
-- **FIND EXACT <query> | FE <query> :** Performs a System-wide File search on the Query, returns the list of Directories.
 - **SEARCH GOOGLE <query> | S G <query> :** Performs a Web Query using Google as the search engine.
 - **SEARCH DDG <query> | S D <query> :** Performs a Web Query using DuckDuckGo as the search engine.
 - **SEARCH CHATGPT <query> | S C <query> :** Performs a query to ChatGPT using the query.
-- **SEARCH PERPLEXITY <query> | S P <query> :** Performs a query to Perplexity using the query
+- **SEARCH PERPLEXITY <query> | S P <query> :** Performs a query to Perplexity using the query.
+- **SEARCH CLAUDE <query> | S CL <query> :** Performs a query to Claude using the query.
+- **SEARCH GEMINI <query> | S GM <query> :** Performs a query to Gemini using the query.
 
 ---
 

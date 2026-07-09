@@ -7,6 +7,8 @@ pub enum SearchEngine {
     DuckDuckGo,
     ChatGPT,
     Perplexity,
+    Claude,
+    Gemini,
 }
 
 impl SearchEngine {
@@ -16,6 +18,8 @@ impl SearchEngine {
             &SearchEngine::DuckDuckGo => String::from("DuckDuckGo"),
             &SearchEngine::ChatGPT => String::from("ChatGPT"),
             &SearchEngine::Perplexity => String::from("Perplexity"),
+            &SearchEngine::Claude => String::from("Claude"),
+            &SearchEngine::Gemini => String::from("Gemini"),
         }
     }
 }
