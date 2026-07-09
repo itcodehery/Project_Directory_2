@@ -1,101 +1,51 @@
-use std::path::PathBuf;
 mod commands;
 mod completion;
 mod delegation;
 mod favorites;
 mod file_system_state;
 mod filesystem;
+mod docs;
 mod indexer;
 mod parser;
-mod raw_input;
 mod search;
+#[macro_use]
+pub mod utils;
+pub mod tui;
 
-use colored::Colorize;
-use commands::execute_command;
-// use crossterm::terminal;
-use delegation::execute_with_piping;
 use favorites::FavoritesManager;
 use file_system_state::FileSystemState;
-use indexer::index_current_directory;
-use parser::parse_command;
+use std::path::PathBuf;
 
 fn main() {
-    // Dependency Injection of the State Variable
     let mut current_file_sys_state: FileSystemState = FileSystemState::new();
-
     let mut fav_manager = FavoritesManager::new().expect("Failed to initialize FavoritesManager");
-    println!("\x1B[2J\x1B[1;1H");
-    terminal_boilerplate(&current_file_sys_state);
-    command_handler(&mut current_file_sys_state, &mut fav_manager);
-}
-
-fn terminal_boilerplate(sys_state: &FileSystemState) {
-    println!("------------------------");
-    println!(
-        "{} for Windows\nInstall the latest DIR2 for new features and improvements!",
-        "DIR2".green()
-    );
-    println!("------------------------");
-    println!("Current State: {:?}", sys_state.get_current_state());
-    // println!("Current Directory: {}\n", sys_state.get_current_path().to_string_lossy());
-}
-
-fn command_handler(sys_state: &mut FileSystemState, favorites_manager: &mut FavoritesManager) {
-    loop {
-        let mut command: String = String::new();
-        eprint!(
-            "{}{}>",
-            "DIR2@".green(),
-            trim_quotes(sys_state.get_current_path()).to_string_lossy()
-        );
-        // Standard IO reads as a string. We require raw input for autocomplete purposes
-        // std::io::stdin().read_line(&mut command).unwrap();
-        // let raw_input = terminal::enable_raw_mode().unwrap();
-        let command = raw_input::read_line(&mut command, sys_state).expect("Couldn't read input!");
-        println!();
-        let command: String = command.trim().to_string();
-        if command.is_empty() {
-            continue;
-        }
-        if command.starts_with("CML ") || command.starts_with("cml ") {
-            let command = command.replace("CML", "");
-            let command = command.replace("cml", "");
-            let command = command.trim();
-
-            match delegation::execute_using_cmd(&command) {
-                Ok(_) => continue,
-                Err(e) => println!("Error: {}", e),
-            }
-            continue;
-        }
-
-        if command.contains('|') {
-            match execute_with_piping(&command) {
-                Ok(_) => continue,
-                Err(e) => println!("Error: {}", e),
-            }
-            continue;
-        }
-        let tokens = parse_command(&command);
-        match tokens {
-            Ok(command) => {
-                let res = execute_command(command, sys_state, favorites_manager);
-                if res.is_err() {
-                    println!("{}: {}", "Error".red(), res.unwrap_err());
-                    continue;
+    
+    // Execute .dir2rc
+    if let Some(mut home_dir) = dirs::home_dir() {
+        home_dir.push(".dir2rc");
+        if home_dir.exists() {
+            if let Ok(contents) = std::fs::read_to_string(home_dir) {
+                for line in contents.lines() {
+                    let cmd_line = line.trim();
+                    if cmd_line.is_empty() || cmd_line.starts_with('#') {
+                        continue;
+                    }
+                    let mut cmd = utils::substitute_env_vars(cmd_line);
+                    cmd = current_file_sys_state.expand_aliases(&cmd);
+                    if let Ok(command) = parser::parse_command(&cmd) {
+                        let _ = commands::execute_command(command, &mut current_file_sys_state, &mut fav_manager);
+                    }
                 }
-                if res.unwrap().to_uppercase() == "EXITED!" {
-                    break;
-                }
-            }
-            Err(error) => {
-                println!("Error: {}", error);
             }
         }
     }
+
+    if let Err(e) = tui::run_tui(current_file_sys_state, fav_manager) {
+        eprintln!("Error in TUI: {}", e);
+    }
 }
 
-fn trim_quotes(path: &PathBuf) -> PathBuf {
+pub fn trim_quotes(path: &PathBuf) -> PathBuf {
     let cleaned = path
         .to_string_lossy()
         .chars()

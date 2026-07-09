@@ -9,10 +9,51 @@ pub enum Command {
     // Meta Commands
     ListCommands,
     ClearScreen,
+    Config,
+    History,
     Exit,
+    Docs {
+        command_name: Option<String>,
+    },
+    SqlQuery {
+        query: String,
+    },
     Unknown {
         command: String,
+        args: Vec<String>,
     },
+    
+    // Environment Commands
+    Export {
+        key: String,
+        value: String,
+    },
+    Unset {
+        key: String,
+    },
+    Env,
+    Echo {
+        text: String,
+    },
+    
+    // Alias Commands
+    Alias {
+        key: String,
+        value: String,
+    },
+    Unalias {
+        key: String,
+    },
+    Aliases,
+
+    // Interactive Config Commands
+    AddInteractive {
+        command: String,
+    },
+    RemoveInteractive {
+        command: String,
+    },
+    ListInteractive,
 
     // State Management Commands
     Select {
@@ -29,7 +70,9 @@ pub enum Command {
     WatchDirectory {
         directory: String,
     },
-    ListDirectory,
+    ListDirectory {
+        show_hidden: bool,
+    },
     ChangeDrive {
         drive: String,
     },
@@ -56,12 +99,9 @@ pub enum Command {
     },
 
     // Search Commands
-    FindExact {
-        filename: String,
-    },
     Search {
-        engine: SearchEngine,
-        filename: String,
+        engine: String,
+        query: String,
     },
 
     // Favorite Commands
@@ -76,17 +116,122 @@ pub enum Command {
 }
 
 pub fn parse_command(input: &str) -> Result<Command, String> {
+    if input.trim().is_empty() {
+        return Err(String::from("Empty command"));
+    }
+    
+    // Try SQL Parser First
+    let dialect = sqlparser::dialect::GenericDialect {};
+    if sqlparser::parser::Parser::parse_sql(&dialect, input).is_ok() {
+        return Ok(Command::SqlQuery {
+            query: input.to_string(),
+        });
+    }
+
     let tokens = tokenize(input)?;
+    if tokens.is_empty() {
+        return Err(String::from("Empty command"));
+    }
 
     return match tokens[0].to_uppercase().as_str() {
         // Meta Commands
-        "LC" => Ok(Command::ListCommands),
-        "EXIT" | "/E" => Ok(Command::Exit),
-        "CLS" | "/C" => Ok(Command::ClearScreen),
+        "LC" | "LIST COMMANDS" => Ok(Command::ListCommands),
+        "CLS" | "/C" | "CLEAR" => Ok(Command::ClearScreen),
+        "CONFIG" | "RC" => Ok(Command::Config),
+        "HISTORY" | "HIST" => Ok(Command::History),
+        "DOCS" | "MAN" => {
+            let cmd = if tokens.len() > 1 {
+                Some(tokens[1].clone())
+            } else {
+                None
+            };
+            Ok(Command::Docs { command_name: cmd })
+        }
+        "EXIT" | "QUIT" | "/Q" => Ok(Command::Exit),
+        "EXPORT" => {
+            if tokens.len() < 2 {
+                return Err(String::from("Missing argument. Usage: export VAR=value"));
+            }
+            let arg = tokens[1..].join(" ");
+            let parts: Vec<&str> = arg.splitn(2, '=').collect();
+            if parts.len() != 2 {
+                return Err(String::from("Invalid format. Usage: export VAR=value"));
+            }
+            Ok(Command::Export {
+                key: parts[0].to_string(),
+                value: parts[1].to_string(),
+            })
+        }
+        "UNSET" => {
+            if tokens.len() != 2 {
+                return Err(String::from("Missing argument. Usage: unset VAR"));
+            }
+            Ok(Command::Unset {
+                key: tokens[1].to_string(),
+            })
+        }
+        "ENV" => Ok(Command::Env),
+        "ECHO" => {
+            let text = if tokens.len() > 1 {
+                tokens[1..].join(" ")
+            } else {
+                String::new()
+            };
+            Ok(Command::Echo { text })
+        }
+        "ALIAS" => {
+            if tokens.len() < 2 {
+                return Ok(Command::Aliases);
+            }
+            let arg = tokens[1..].join(" ");
+            let parts: Vec<&str> = arg.splitn(2, '=').collect();
+            if parts.len() != 2 {
+                return Err(String::from("Invalid format. Usage: alias name='command'"));
+            }
+            Ok(Command::Alias {
+                key: parts[0].to_string(),
+                value: parts[1].to_string(),
+            })
+        }
+        "UNALIAS" => {
+            if tokens.len() != 2 {
+                return Err(String::from("Missing argument. Usage: unalias name"));
+            }
+            Ok(Command::Unalias {
+                key: tokens[1].to_string(),
+            })
+        }
+        "ALIASES" => Ok(Command::Aliases),
+        "S" | "SEARCH" => {
+            if tokens.len() < 3 {
+                return Err(String::from("Missing arguments. Usage: S <engine> <query>"));
+            }
+            Ok(Command::Search {
+                engine: tokens[1].to_string(),
+                query: tokens[2..].join(" "),
+            })
+        }
+        "TUIADD" => {
+            if tokens.len() != 2 {
+                return Err(String::from("Missing argument. Usage: TUIADD <command>"));
+            }
+            Ok(Command::AddInteractive {
+                command: tokens[1].to_string(),
+            })
+        }
+        "TUIRM" => {
+            if tokens.len() != 2 {
+                return Err(String::from("Missing argument. Usage: TUIRM <command>"));
+            }
+            Ok(Command::RemoveInteractive {
+                command: tokens[1].to_string(),
+            })
+        }
+        "TUILS" => Ok(Command::ListInteractive),
         // Directory Commands
         "DD" => Ok(Command::DodgeDirectory),
         "WD" => parse_watch_directory(&tokens),
-        "LD" => parse_list_directory(&tokens),
+        "LD" | "LS" | "LL" | "LA" => parse_list_directory(&tokens),
         "CD" => parse_change_drive(&tokens),
         "MKDIR" => parse_make_directory(&tokens),
         "RMDIR" => parse_remove_directory(&tokens),
@@ -106,8 +251,6 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
         "RF" => parse_run(&tokens),
         "FAV" => parse_fav(&tokens),
         // Search Commands
-        "FIND" | "FE" => parse_find_exact(&tokens),
-        "SEARCH" | "S" => parse_search(&tokens),
         _ => parse_unknown(&tokens),
     };
 }
@@ -171,10 +314,17 @@ fn parse_watch_directory(tokens: &[String]) -> Result<Command, String> {
 }
 
 fn parse_list_directory(tokens: &[String]) -> Result<Command, String> {
-    if tokens.len() > 1 {
-        return Err("Expected no arguments with LD Command".red().to_string());
+    let mut show_hidden = false;
+    let base_cmd = tokens[0].to_uppercase();
+    if base_cmd == "LA" || base_cmd == "LL" {
+        show_hidden = true;
     }
-    return Ok(Command::ListDirectory);
+    for token in tokens.iter().skip(1) {
+        if token.starts_with('-') && token.to_lowercase().contains('a') {
+            show_hidden = true;
+        }
+    }
+    return Ok(Command::ListDirectory { show_hidden });
 }
 
 fn parse_make_directory(tokens: &[String]) -> Result<Command, String> {
@@ -314,68 +464,7 @@ fn parse_drop_state(tokens: &[String]) -> Result<Command, String> {
     )
 }
 
-fn parse_find_exact(tokens: &[String]) -> Result<Command, String> {
-    if tokens.len() == 2 && tokens[0].to_uppercase() == "FE" {
-        return Ok(Command::FindExact {
-            filename: parse_filename(tokens[1].clone()),
-        });
-    }
 
-    if tokens.len() == 3
-        && tokens[0].to_uppercase() == "FIND"
-        && tokens[1].to_uppercase() == "EXACT"
-    {
-        return Ok(Command::FindExact {
-            filename: parse_filename(tokens[2].clone()),
-        });
-    }
-    Err(
-        "Expected FIND EXACT or FE \"Filename\", Type LC to view a list of available commands."
-            .red()
-            .to_string(),
-    )
-}
-
-fn parse_search(tokens: &[String]) -> Result<Command, String> {
-    if tokens.len() != 3 {
-        return Err("SEARCH Expected three arguments!".red().to_string());
-    }
-    if tokens[0].to_lowercase() == "search" || tokens[0].to_lowercase() == "s" {
-        return match tokens[1].clone().to_lowercase().as_str() {
-            "google" | "g" => Ok(Command::Search {
-                engine: SearchEngine::Google,
-                filename: parse_filename(tokens[2].clone()),
-            }),
-            "ddg" | "d" => Ok(Command::Search {
-                engine: SearchEngine::DuckDuckGo,
-                filename: parse_filename(tokens[2].clone()),
-            }),
-            "chatgpt" | "c" => Ok(Command::Search {
-                engine: SearchEngine::ChatGPT,
-                filename: parse_filename(tokens[2].clone()),
-            }),
-            "perplexity" | "p" => Ok(Command::Search {
-                engine: SearchEngine::Perplexity,
-                filename: parse_filename(tokens[2].clone()),
-            }),
-            &_ => {
-                println!(
-                    "{} > Unknown search engine: {}",
-                    "ERROR".red(),
-                    tokens[1].to_string()
-                );
-                Ok(Command::Unknown {
-                    command: parse_filename(tokens[1].clone()),
-                })
-            }
-        };
-    }
-    Err(
-        "Invalid SEARCH Command. Run LIST COMMANDS or LC to view available commands."
-            .red()
-            .to_string(),
-    )
-}
 
 fn parse_filename(token: String) -> String {
     // Handle quoted strings
@@ -411,9 +500,10 @@ fn parse_fav(tokens: &[String]) -> Result<Command, String> {
                 index: match tokens[2].parse::<usize>() {
                     Ok(idx) => idx,
                     Err(_) => {
-                        println!("{}: Index out of bounds!", "ERROR".red());
+                        crate::cprintln!("{}: Index out of bounds!", "ERROR".red());
                         return Ok(Command::Unknown {
                             command: "Invalid Fav Index".to_string(),
+                            args: vec![],
                         });
                     }
                 },
@@ -439,9 +529,10 @@ fn parse_run(tokens: &[String]) -> Result<Command, String> {
                 index: match tokens[2].parse::<usize>() {
                     Ok(idx) => idx,
                     Err(_) => {
-                        println!("ERROR: Index out of bounds!");
+                        crate::cprintln!("ERROR: Index out of bounds!");
                         return Ok(Command::Unknown {
                             command: "Invalid Fav Index".to_string(),
+                            args: vec![],
                         });
                     }
                 },
@@ -450,9 +541,16 @@ fn parse_run(tokens: &[String]) -> Result<Command, String> {
         },
         (1, "RS") => Ok(Command::RunState),
         (2, "RF") => Ok(Command::RunFav {
-            index: tokens[1]
-                .parse::<usize>()
-                .expect("Invalid FAV index".red().to_string().as_str()),
+            index: match tokens[1].parse::<usize>() {
+                Ok(idx) => idx,
+                Err(_) => {
+                    crate::cprintln!("ERROR: Invalid FAV index!");
+                    return Ok(Command::Unknown {
+                        command: tokens[0].clone(),
+                        args: tokens[1..].to_vec(),
+                    });
+                }
+            },
         }),
         _ => Err(
             "Invalid RUN Command. Type LC to view a list of available commands."
@@ -463,11 +561,8 @@ fn parse_run(tokens: &[String]) -> Result<Command, String> {
 }
 
 fn parse_unknown(tokens: &[String]) -> Result<Command, String> {
-    println!(
-        "Error: Unknown command.\nType {} to view a list of available commands or use {} to execute commands on your native shell.\n",
-        "LC".yellow().to_string(),"CML".yellow().to_string()
-    );
     return Ok(Command::Unknown {
-        command: tokens[0].to_uppercase(),
+        command: tokens[0].clone(),
+        args: tokens[1..].to_vec(),
     });
 }
