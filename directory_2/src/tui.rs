@@ -91,6 +91,8 @@ pub async fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesM
             }
         }
     });
+    
+    let mut active_child: Option<tokio::process::Child> = None;
 
     loop {
         terminal.draw(|f| {
@@ -240,6 +242,32 @@ pub async fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesM
 
         })?;
 
+        if let Some(mut child) = active_child.take() {
+            tokio::select! {
+                _ = child.wait() => {
+                    active_child = None;
+                    let _ = terminal.clear(); // Fix layout breaks after full-screen apps
+                    let _ = crossterm::execute!(std::io::stdout(), crossterm::terminal::SetTitle("dir2"));
+                }
+                Some(app_event) = rx.recv() => {
+                    match app_event {
+                        AppEvent::Input(Event::Key(key)) => {
+                            if key.kind == KeyEventKind::Press {
+                                if key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
+                                    let _ = child.kill().await;
+                                }
+                            }
+                            active_child = Some(child);
+                        }
+                        _ => {
+                            active_child = Some(child);
+                        }
+                    }
+                }
+            }
+            continue;
+        }
+
         if let Some(app_event) = rx.recv().await {
             match app_event {
                 AppEvent::Input(Event::Key(key)) => {
@@ -302,6 +330,85 @@ pub async fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesM
                         }
 
                         match parse_command(&cmd) {
+                            Ok(crate::parser::Command::Unknown { command, args }) => {
+                                let cmd_lower = command.to_lowercase();
+                                let is_interactive = sys_state.interactive_commands.contains(&cmd_lower);
+
+                                if is_interactive {
+                                    let mut stdout = std::io::stdout();
+                                    let _ = crossterm::terminal::disable_raw_mode();
+                                    let _ = crossterm::execute!(stdout, crossterm::terminal::LeaveAlternateScreen, crossterm::event::DisableMouseCapture);
+
+                                    let mut child = std::process::Command::new(&command)
+                                        .args(&args)
+                                        .current_dir(sys_state.get_current_path())
+                                        .spawn();
+
+                                    if let Ok(mut c) = child {
+                                        let _ = c.wait();
+                                    } else {
+                                        crate::cprintln!("Failed to execute interactive command: {}", command);
+                                    }
+
+                                    let _ = crossterm::terminal::enable_raw_mode();
+                                    let _ = crossterm::execute!(stdout, crossterm::terminal::EnterAlternateScreen, crossterm::event::EnableMouseCapture);
+                                    crate::utils::set_clear_marker();
+                                    let _ = crossterm::execute!(std::io::stdout(), crossterm::terminal::SetTitle("dir2"));
+                                } else {
+                                    use std::process::Stdio;
+                                    use tokio::io::{AsyncBufReadExt, BufReader};
+
+                                    let is_background = args.last().map(|s| s == "&").unwrap_or(false);
+                                    let args_filtered = if is_background {
+                                        args[..args.len()-1].to_vec()
+                                    } else {
+                                        args.clone()
+                                    };
+
+                                    let mut child = tokio::process::Command::new(&command)
+                                        .args(&args_filtered)
+                                        .current_dir(sys_state.get_current_path())
+                                        .stdout(Stdio::piped())
+                                        .stderr(Stdio::piped())
+                                        .spawn();
+
+                                    match child {
+                                        Ok(mut c) => {
+                                            let stdout = c.stdout.take().unwrap();
+                                            let stderr = c.stderr.take().unwrap();
+
+                                            tokio::spawn(async move {
+                                                let mut stdout_reader = BufReader::new(stdout).lines();
+                                                let mut stderr_reader = BufReader::new(stderr).lines();
+
+                                                loop {
+                                                    tokio::select! {
+                                                        Ok(Some(line)) = stdout_reader.next_line() => {
+                                                            crate::cprintln!("{}", line);
+                                                        }
+                                                        Ok(Some(line)) = stderr_reader.next_line() => {
+                                                            crate::cprintln!("{}", line);
+                                                        }
+                                                        else => break,
+                                                    }
+                                                }
+                                            });
+
+                                            if !is_background {
+                                                active_child = Some(c);
+                                                continue;
+                                            } else {
+                                                crate::cprintln!("[Background Job Started]");
+                                                let _ = crossterm::execute!(std::io::stdout(), crossterm::terminal::SetTitle("dir2"));
+                                            }
+                                        }
+                                        Err(_) => {
+                                            crate::cprintln!("Error: Unknown command '{}'.", command);
+                                            let _ = crossterm::execute!(std::io::stdout(), crossterm::terminal::SetTitle("dir2"));
+                                        }
+                                    }
+                                }
+                            }
                             Ok(parsed) => {
                                 let res = execute_command(parsed, &mut sys_state, &mut fav_manager).await;
                                 let _ = terminal.clear(); // Fix layout breaks after full-screen apps
