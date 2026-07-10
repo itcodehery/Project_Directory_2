@@ -92,7 +92,9 @@ pub async fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesM
         }
     });
     
-    let mut active_child: Option<tokio::process::Child> = None;
+    use std::sync::Arc;
+    use tokio::sync::Mutex as TokioMutex;
+    let mut active_child: Option<Arc<TokioMutex<tokio::process::Child>>> = None;
 
     loop {
         terminal.draw(|f| {
@@ -242,9 +244,12 @@ pub async fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesM
 
         })?;
 
-        if let Some(mut child) = active_child.take() {
+        if let Some(child_arc) = active_child.take() {
             tokio::select! {
-                _ = child.wait() => {
+                _ = async {
+                    let mut c = child_arc.lock().await;
+                    c.wait().await
+                } => {
                     active_child = None;
                     let _ = terminal.clear(); // Fix layout breaks after full-screen apps
                     let _ = crossterm::execute!(std::io::stdout(), crossterm::terminal::SetTitle("dir2"));
@@ -254,13 +259,14 @@ pub async fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesM
                         AppEvent::Input(Event::Key(key)) => {
                             if key.kind == KeyEventKind::Press {
                                 if key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL) {
-                                    let _ = child.kill().await;
+                                    let mut c = child_arc.lock().await;
+                                    let _ = c.kill().await;
                                 }
                             }
-                            active_child = Some(child);
+                            active_child = Some(child_arc);
                         }
                         _ => {
-                            active_child = Some(child);
+                            active_child = Some(child_arc);
                         }
                     }
                 }
@@ -394,12 +400,22 @@ pub async fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesM
                                                 }
                                             });
 
+                                            let child_arc = Arc::new(TokioMutex::new(c));
+
                                             if !is_background {
-                                                active_child = Some(c);
+                                                active_child = Some(child_arc);
                                                 continue;
                                             } else {
-                                                crate::cprintln!("[Background Job Started]");
+                                                let job_id = crate::jobs::add_job(command.clone(), child_arc.clone());
+                                                crate::cprintln!("[{}] Background Job Started: {}", job_id, command);
                                                 let _ = crossterm::execute!(std::io::stdout(), crossterm::terminal::SetTitle("dir2"));
+                                                
+                                                tokio::spawn(async move {
+                                                    let mut c_guard = child_arc.lock().await;
+                                                    let _ = c_guard.wait().await;
+                                                    crate::jobs::remove_job(job_id);
+                                                    crate::cprintln!("[{}] Job Finished", job_id);
+                                                });
                                             }
                                         }
                                         Err(_) => {
@@ -407,6 +423,40 @@ pub async fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesM
                                             let _ = crossterm::execute!(std::io::stdout(), crossterm::terminal::SetTitle("dir2"));
                                         }
                                     }
+                                }
+                            }
+                            Ok(crate::parser::Command::Jobs) => {
+                                let jobs = crate::jobs::list_jobs();
+                                if jobs.is_empty() {
+                                    crate::cprintln!("No active background jobs.");
+                                } else {
+                                    crate::cprintln!("Active Jobs:");
+                                    for (id, cmd) in jobs {
+                                        crate::cprintln!("[{}] {}", id, cmd);
+                                    }
+                                }
+                            }
+                            Ok(crate::parser::Command::Fg { id }) => {
+                                if let Some(job) = crate::jobs::get_job(id) {
+                                    crate::jobs::remove_job(id);
+                                    active_child = Some(job.child);
+                                    crate::cprintln!("Bringing job [{}] to foreground", id);
+                                    continue;
+                                } else {
+                                    crate::cprintln!("Error: Job {} not found.", id);
+                                }
+                            }
+                            Ok(crate::parser::Command::Kill { id }) => {
+                                if let Some(job) = crate::jobs::get_job(id) {
+                                    let child_arc = job.child.clone();
+                                    tokio::spawn(async move {
+                                        let mut c = child_arc.lock().await;
+                                        let _ = c.kill().await;
+                                    });
+                                    crate::cprintln!("Sent SIGKILL to job [{}]", id);
+                                    crate::jobs::remove_job(id);
+                                } else {
+                                    crate::cprintln!("Error: Job {} not found.", id);
                                 }
                             }
                             Ok(parsed) => {

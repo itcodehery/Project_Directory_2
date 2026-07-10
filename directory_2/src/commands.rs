@@ -32,6 +32,11 @@ pub async fn execute_command(
             crate::utils::reset_clear_marker();
             return Ok(String::new());
         }
+        Command::Jobs | Command::Fg { .. } | Command::Kill { .. } => {
+            // These are primarily intercepted and handled in tui.rs directly.
+            // If they reach here (e.g., from .dir2rc), we just ignore them.
+            return Ok(String::new());
+        }
         Command::Config => {
             let mut home_dir = match dirs::home_dir() {
                 Some(path) => path,

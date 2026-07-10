@@ -12,6 +12,7 @@ mod sql_engine;
 #[macro_use]
 pub mod utils;
 pub mod tui;
+pub mod jobs;
 
 use favorites::FavoritesManager;
 use file_system_state::FileSystemState;

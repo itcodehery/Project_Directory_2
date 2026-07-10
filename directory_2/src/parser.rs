@@ -23,6 +23,11 @@ pub enum Command {
         args: Vec<String>,
     },
     
+    // Job Control Commands
+    Jobs,
+    Fg { id: u32 },
+    Kill { id: u32 },
+    
     // Environment Commands
     Export {
         key: String,
@@ -139,6 +144,27 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
         "CLS" | "/C" | "CLEAR" => Ok(Command::ClearScreen),
         "CONFIG" | "RC" => Ok(Command::Config),
         "HISTORY" | "HIST" => Ok(Command::History),
+        "JOBS" => Ok(Command::Jobs),
+        "FG" => {
+            if tokens.len() < 2 {
+                return Err(String::from("Missing job ID. Usage: FG <id>"));
+            }
+            if let Ok(id) = tokens[1].parse::<u32>() {
+                Ok(Command::Fg { id })
+            } else {
+                Err(String::from("Invalid job ID."))
+            }
+        }
+        "KILL" => {
+            if tokens.len() < 2 {
+                return Err(String::from("Missing job ID. Usage: KILL <id>"));
+            }
+            if let Ok(id) = tokens[1].parse::<u32>() {
+                Ok(Command::Kill { id })
+            } else {
+                Err(String::from("Invalid job ID."))
+            }
+        }
         "DOCS" | "MAN" => {
             let cmd = if tokens.len() > 1 {
                 Some(tokens[1].clone())
