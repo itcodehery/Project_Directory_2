@@ -8,6 +8,7 @@ mod docs;
 mod indexer;
 mod parser;
 mod search;
+mod sql_engine;
 #[macro_use]
 pub mod utils;
 pub mod tui;
@@ -16,7 +17,8 @@ use favorites::FavoritesManager;
 use file_system_state::FileSystemState;
 use std::path::PathBuf;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let mut current_file_sys_state: FileSystemState = FileSystemState::new();
     let mut fav_manager = FavoritesManager::new().expect("Failed to initialize FavoritesManager");
     
@@ -33,14 +35,14 @@ fn main() {
                     let mut cmd = utils::substitute_env_vars(cmd_line);
                     cmd = current_file_sys_state.expand_aliases(&cmd);
                     if let Ok(command) = parser::parse_command(&cmd) {
-                        let _ = commands::execute_command(command, &mut current_file_sys_state, &mut fav_manager);
+                        let _ = commands::execute_command(command, &mut current_file_sys_state, &mut fav_manager).await;
                     }
                 }
             }
         }
     }
 
-    if let Err(e) = tui::run_tui(current_file_sys_state, fav_manager) {
+    if let Err(e) = tui::run_tui(current_file_sys_state, fav_manager).await {
         eprintln!("Error in TUI: {}", e);
     }
 }

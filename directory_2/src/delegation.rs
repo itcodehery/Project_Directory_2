@@ -1,54 +1,43 @@
-use std::process::{Command, Stdio};
+use std::process::Stdio;
+use tokio::io::{AsyncBufReadExt, BufReader};
 
-pub fn execute_with_piping(input: &str) -> Result<(), String> {
+pub async fn execute_with_piping(input: &str) -> Result<(), String> {
     #[cfg(windows)]
-    let status_res = Command::new("cmd")
+    let mut child = tokio::process::Command::new("cmd")
         .args(&["/C", input])
         .current_dir("./")
-        .status();
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| e.to_string())?;
 
     #[cfg(unix)]
-    let status_res = Command::new("sh")
+    let mut child = tokio::process::Command::new("sh")
         .args(&["-c", input])
         .current_dir("./")
-        .status();
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .map_err(|e| e.to_string())?;
 
-    match status_res {
-        Ok(_) => Ok(()),
-        Err(e) => Err(e.to_string()),
-    }
-}
+    let stdout = child.stdout.take().unwrap();
+    let stderr = child.stderr.take().unwrap();
 
-pub fn execute_using_cmd(input: &str) -> Result<(), String> {
-    #[cfg(windows)]
-    let status = Command::new("cmd")
-        .args(&["/C", input])
-        .current_dir("./")
-        .stdin(Stdio::inherit())
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .status();
+    let mut stdout_reader = BufReader::new(stdout).lines();
+    let mut stderr_reader = BufReader::new(stderr).lines();
 
-    #[cfg(unix)]
-    let status = Command::new("sh")
-        .args(&["-c", input])
-        .current_dir("./")
-        .stdin(Stdio::inherit())
-        .stdout(Stdio::inherit())
-        .stderr(Stdio::inherit())
-        .status();
-
-    match status {
-        Ok(status) => {
-            if status.success() {
-                return Ok(());
-            } else {
-                return Err(format!(
-                    "Command failed with exit code: {}",
-                    status.code().unwrap_or(-1)
-                ));
+    loop {
+        tokio::select! {
+            Ok(Some(line)) = stdout_reader.next_line() => {
+                crate::cprintln!("{}", line);
             }
+            Ok(Some(line)) = stderr_reader.next_line() => {
+                crate::cprintln!("{}", line);
+            }
+            else => break,
         }
-        Err(e) => Err(format!("Command execution failed: {}", e)),
     }
+    
+    let _ = child.wait().await;
+    Ok(())
 }

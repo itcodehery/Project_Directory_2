@@ -18,14 +18,19 @@ use std::io;
 use crate::{
     commands::execute_command,
     completion,
-    delegation::{execute_using_cmd, execute_with_piping},
+    delegation::{execute_with_piping},
     favorites::FavoritesManager,
     file_system_state::FileSystemState,
     parser::parse_command,
     utils,
 };
 
-pub fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesManager) -> io::Result<()> {
+pub enum AppEvent {
+    Input(Event),
+    Tick,
+}
+
+pub async fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesManager) -> io::Result<()> {
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
@@ -59,6 +64,33 @@ pub fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesManager
     crate::cprintln!("DIR2 Shell\nInstall the latest DIR2 for new features and improvements!");
     crate::cprintln!("------------------------");
     crate::cprintln!("Current State: {:?}", sys_state.get_current_state());
+
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+    let tick_rate = std::time::Duration::from_millis(100);
+
+    tokio::task::spawn_blocking(move || {
+        let mut last_tick = std::time::Instant::now();
+        loop {
+            let timeout = tick_rate
+                .checked_sub(last_tick.elapsed())
+                .unwrap_or_else(|| std::time::Duration::from_secs(0));
+                
+            if crossterm::event::poll(timeout).unwrap_or(false) {
+                if let Ok(event) = crossterm::event::read() {
+                    if tx.send(AppEvent::Input(event)).is_err() {
+                        break;
+                    }
+                }
+            }
+            
+            if last_tick.elapsed() >= tick_rate {
+                if tx.send(AppEvent::Tick).is_err() {
+                    break;
+                }
+                last_tick = std::time::Instant::now();
+            }
+        }
+    });
 
     loop {
         terminal.draw(|f| {
@@ -208,8 +240,10 @@ pub fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesManager
 
         })?;
 
-        if let Event::Key(key) = event::read()? {
-            if key.kind == KeyEventKind::Press {
+        if let Some(app_event) = rx.recv().await {
+            match app_event {
+                AppEvent::Input(Event::Key(key)) => {
+                    if key.kind == KeyEventKind::Press {
                 match (key.code, key.modifiers) {
                     (KeyCode::Enter, KeyModifiers::NONE) => {
                         let mut cmd = utils::substitute_env_vars(input.trim());
@@ -238,17 +272,40 @@ pub fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesManager
                         crate::cprintln!("");
                         crate::cprintln!("──────────────────────────────────────────────────");
                         crate::cprintln!("> {}", cmd);
+                        
+                        let _ = crossterm::execute!(std::io::stdout(), crossterm::terminal::SetTitle(format!("dir2 [Running: {}]", cmd)));
+                        let _ = terminal.draw(|f| {
+                            let size = f.area();
+                            let center_chunks = ratatui::layout::Layout::default()
+                                .direction(ratatui::layout::Direction::Vertical)
+                                .flex(ratatui::layout::Flex::Center)
+                                .constraints([ratatui::layout::Constraint::Length(3)])
+                                .split(size);
+                                
+                            let p = ratatui::widgets::Paragraph::new(ratatui::text::Line::from(vec![
+                                ratatui::text::Span::styled("⚙ Running: ", ratatui::style::Style::default().fg(ratatui::style::Color::Yellow).add_modifier(ratatui::style::Modifier::BOLD)),
+                                ratatui::text::Span::raw(&cmd),
+                            ]))
+                            .alignment(ratatui::layout::Alignment::Center)
+                            .block(ratatui::widgets::Block::default().borders(ratatui::widgets::Borders::ALL).border_type(ratatui::widgets::BorderType::Rounded));
+                            
+                            f.render_widget(ratatui::widgets::Clear, size);
+                            f.render_widget(p, center_chunks[0]);
+                        });
+
                         if cmd.contains('|') {
-                            if let Err(e) = execute_with_piping(&cmd) {
+                            if let Err(e) = execute_with_piping(&cmd).await {
                                 crate::cprintln!("Error: {}", e);
                             }
+                            let _ = crossterm::execute!(std::io::stdout(), crossterm::terminal::SetTitle("dir2"));
                             continue;
                         }
 
                         match parse_command(&cmd) {
                             Ok(parsed) => {
-                                let res = execute_command(parsed, &mut sys_state, &mut fav_manager);
+                                let res = execute_command(parsed, &mut sys_state, &mut fav_manager).await;
                                 let _ = terminal.clear(); // Fix layout breaks after full-screen apps
+                                let _ = crossterm::execute!(std::io::stdout(), crossterm::terminal::SetTitle("dir2"));
                                 if let Err(e) = res {
                                     crate::cprintln!("Error: {}", e);
                                 } else if let Ok(s) = res {
@@ -259,6 +316,7 @@ pub fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesManager
                             }
                             Err(e) => {
                                 crate::cprintln!("Error: {}", e);
+                                let _ = crossterm::execute!(std::io::stdout(), crossterm::terminal::SetTitle("dir2"));
                             }
                         }
                     }
@@ -371,7 +429,8 @@ pub fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesManager
                     _ => {}
                 }
             }
-        } else if let Event::Mouse(mouse_event) = event::read()? {
+        }
+        AppEvent::Input(Event::Mouse(mouse_event)) => {
             match mouse_event.kind {
                 MouseEventKind::ScrollUp => {
                     let logs = utils::get_logs();
@@ -387,6 +446,9 @@ pub fn run_tui(mut sys_state: FileSystemState, mut fav_manager: FavoritesManager
                 _ => {}
             }
         }
+        _ => {}
+    }
+}
     }
 
     disable_raw_mode()?;

@@ -10,7 +10,7 @@ use crate::parser::Command;
 use crate::search::{SearchEngine, search_builder};
 use rust_search::similarity_sort;
 
-pub fn execute_command(
+pub async fn execute_command(
     command: Command,
     file_system_state: &mut FileSystemState,
     favorites_manager: &mut FavoritesManager,
@@ -23,8 +23,7 @@ pub fn execute_command(
             return Ok(String::new());
         }
         Command::SqlQuery { query } => {
-            crate::cprintln!("Executing SQL: {}", query);
-            Ok("SQL query executed".to_string()) // Placeholder for SQL execution
+            return crate::sql_engine::execute_sql_query(file_system_state, &query);
         }
         Command::Docs { command_name } => {
             return crate::docs::show_docs(command_name);
@@ -160,22 +159,38 @@ pub fn execute_command(
                 return Ok(String::new());
             }
 
-            // attempt native execution for non-interactive
-            let output = std::process::Command::new(&command)
+            // attempt native execution for non-interactive with streaming output
+            use std::process::Stdio;
+            use tokio::io::{AsyncBufReadExt, BufReader};
+
+            let mut child = tokio::process::Command::new(&command)
                 .args(&args)
                 .current_dir(file_system_state.get_current_path())
-                .output();
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn();
 
-            match output {
-                Ok(out) => {
-                    let stdout = String::from_utf8_lossy(&out.stdout);
-                    let stderr = String::from_utf8_lossy(&out.stderr);
-                    if !stdout.is_empty() {
-                        crate::cprintln!("{}", stdout);
+            match child {
+                Ok(mut c) => {
+                    let stdout = c.stdout.take().unwrap();
+                    let stderr = c.stderr.take().unwrap();
+
+                    let mut stdout_reader = BufReader::new(stdout).lines();
+                    let mut stderr_reader = BufReader::new(stderr).lines();
+
+                    loop {
+                        tokio::select! {
+                            Ok(Some(line)) = stdout_reader.next_line() => {
+                                crate::cprintln!("{}", line);
+                            }
+                            Ok(Some(line)) = stderr_reader.next_line() => {
+                                crate::cprintln!("{}", line);
+                            }
+                            else => break,
+                        }
                     }
-                    if !stderr.is_empty() {
-                        crate::cprintln!("{}", stderr);
-                    }
+                    
+                    let _ = c.wait().await;
                     return Ok(String::new());
                 }
                 Err(_) => {
