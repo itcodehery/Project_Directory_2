@@ -1,0 +1,31 @@
+name: Release Build
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers only when a tag matching v* (e.g., v1.0.0) is pushed
+
+jobs:
+  build:
+    name: Build Release Binary
+    runs-on: ubuntu-latest
+    
+    defaults:
+      run:
+        working-directory: ./directory_2
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dir2-linux-x86_64
+          path: directory_2/target/release/dir2
