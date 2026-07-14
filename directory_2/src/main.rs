@@ -11,7 +11,7 @@ mod search;
 mod sql_engine;
 #[macro_use]
 pub mod utils;
-pub mod tui;
+pub mod shell;
 pub mod jobs;
 
 use favorites::FavoritesManager;
@@ -36,15 +36,15 @@ async fn main() {
                     let mut cmd = utils::substitute_env_vars(cmd_line);
                     cmd = current_file_sys_state.expand_aliases(&cmd);
                     if let Ok(command) = parser::parse_command(&cmd) {
-                        let _ = commands::execute_command(command, &mut current_file_sys_state, &mut fav_manager).await;
+                        let _ = crate::commands_ext::execute_command(command, None, &mut current_file_sys_state, &mut fav_manager).await;
                     }
                 }
             }
         }
     }
 
-    if let Err(e) = tui::run_tui(current_file_sys_state, fav_manager).await {
-        eprintln!("Error in TUI: {}", e);
+    if let Err(e) = shell::run_shell(current_file_sys_state, fav_manager).await {
+        eprintln!("Error in shell: {}", e);
     }
 }
 
@@ -56,3 +56,6 @@ pub fn trim_quotes(path: &PathBuf) -> PathBuf {
         .collect::<String>();
     PathBuf::from(cleaned)
 }
+pub mod value;
+pub mod commands_ext;
+pub mod pipe_executor;

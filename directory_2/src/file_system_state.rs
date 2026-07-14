@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 #[derive(Debug)]
 pub struct FileSystemState {
-    state: Option<PathBuf>,
+    state: Option<Vec<PathBuf>>,
     index: Vec<String>,
     current_path: PathBuf,
     pub aliases: HashMap<String, String>,
@@ -36,7 +36,7 @@ impl FileSystemState {
     }
 
 
-    pub fn get_current_state(&self) -> &Option<PathBuf> {
+    pub fn get_current_state(&self) -> &Option<Vec<PathBuf>> {
         &self.state
     }
 
@@ -56,8 +56,8 @@ impl FileSystemState {
         self.index.clear();
     }
 
-    pub fn set_current_state(&mut self, new_path: PathBuf) {
-        self.state = Some(new_path);
+    pub fn set_current_state(&mut self, new_paths: Vec<PathBuf>) {
+        self.state = Some(new_paths);
     }
 
     pub fn set_current_directory(&mut self, new_path: PathBuf) -> Result<(), std::io::Error> {

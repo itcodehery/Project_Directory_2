@@ -10,7 +10,7 @@ use crate::parser::Command;
 use crate::search::{SearchEngine, search_builder};
 use rust_search::similarity_sort;
 
-pub async fn execute_command(
+pub async fn execute_command_legacy(
     command: Command,
     file_system_state: &mut FileSystemState,
     favorites_manager: &mut FavoritesManager,
@@ -214,8 +214,8 @@ pub async fn execute_command(
         Command::WatchDirectory {
             directory: _directory,
         } => execute_watch_directory(file_system_state, &_directory),
-        Command::ListDirectory { show_hidden } => {
-            return execute_list_directory(file_system_state, show_hidden);
+        Command::ListDirectory { show_hidden, detailed } => {
+            return execute_list_directory(file_system_state, show_hidden, detailed);
         }
         Command::ChangeDrive { drive: _drive } => execute_change_drive(file_system_state, _drive),
         Command::MakeDirectory { directory } => {
@@ -238,14 +238,11 @@ pub async fn execute_command(
         } => execute_rename_file(file_system_state, &old_filename, &new_filename),
 
         // State Management Commands
-        Command::Select {
-            filename: _filename,
-            directory: _directory,
-        } => execute_select(file_system_state, _filename, _directory),
+        Command::Select { target, from } => execute_select(file_system_state, target, from),
         Command::ViewState => execute_view_state(file_system_state),
         Command::ClearState => execute_clear_state(file_system_state),
         Command::MetaState => execute_meta_state(file_system_state),
-        Command::RunState => execute_run_state(file_system_state),
+        Command::RunState { app } => execute_run_state(file_system_state, app),
 
         // Search Commands
         Command::Search {
@@ -258,6 +255,8 @@ pub async fn execute_command(
         Command::FavRm { index: _index } => execute_remove_fav(_index, favorites_manager),
         Command::FavSet => execute_fav_set(file_system_state, favorites_manager),
         Command::RunFav { index: _index } => execute_run_fav(_index, favorites_manager),
+        Command::Pipe { .. } => Ok(String::new()), // Handled in shell.rs
+        Command::Filter { .. } | Command::SelectFields { .. } => Ok(String::new()),
     }
 }
 pub fn execute_change_drive(
@@ -435,7 +434,7 @@ pub fn execute_list_all_cmd() -> Result<String, String> {
 
     crate::cprintln!();
 
-    Ok("Executed: List Commands".to_string())
+    Ok(String::new())
 }
 pub fn execute_dodge_directory(sys_state: &mut FileSystemState) -> Result<String, String> {
     let current_path = sys_state.get_current_path();
@@ -449,7 +448,7 @@ pub fn execute_dodge_directory(sys_state: &mut FileSystemState) -> Result<String
     match current_path.parent() {
         Some(parent) => {
             sys_state.set_current_directory(parent.to_path_buf());
-            Ok(String::from("Executed: Dodge Directory"))
+            Ok(String::new())
         }
         None => {
             crate::cprintln!(
@@ -464,63 +463,91 @@ pub fn execute_dodge_directory(sys_state: &mut FileSystemState) -> Result<String
 
 pub fn execute_select(
     sys_state: &mut FileSystemState,
-    filename: String,
-    directory: String,
+    target: String,
+    from: String,
 ) -> Result<String, String> {
-    let dir_path: PathBuf = if directory.is_empty() || directory == "/" {
+    if target == "*" && from == "." {
+        return execute_list_directory(sys_state, false, false);
+    }
+
+    let dir_path: PathBuf = if from.is_empty() || from == "." {
         sys_state.get_current_path().clone()
     } else {
-        let path = Path::new(&directory);
+        let path = Path::new(&from);
         if path.is_absolute() {
             path.to_path_buf()
         } else {
-            filesystem::resolve_path(path, sys_state.get_current_path())
+            crate::filesystem::resolve_path(path, sys_state.get_current_path())
         }
     };
 
-    if !filesystem::path_exists(&dir_path) {
-        crate::cprintln!("Directory {} does not exist!", directory.bright_red());
-        return Ok(format!("Directory {} does not exist!", directory));
+    if !crate::filesystem::path_exists(&dir_path) {
+        crate::cprintln!("Directory {} does not exist!", from.bright_red());
+        return Ok(format!("Directory {} does not exist!", from));
     }
-    if !filesystem::is_dir(&dir_path) {
-        crate::cprintln!("{} is not a directory!", directory.bright_red());
-        return Ok(format!("Directory {} is not a directory!", directory));
+    if !crate::filesystem::is_dir(&dir_path) {
+        crate::cprintln!("{} is not a directory!", from.bright_red());
+        return Ok(format!("Directory {} is not a directory!", from));
     }
 
-    sys_state.set_current_directory(dir_path.clone());
+    let mut selected_files = Vec::new();
 
-    let file_path = dir_path.join(&filename);
+    if target != "*" && target != from {
+        // Just selecting a specific file
+        let file_path = dir_path.join(&target);
 
-    if !filesystem::path_exists(&file_path) {
-        crate::cprintln!(
-            "File {} does not exist in Directory!",
-            file_path.display().to_string().bright_red()
-        );
-        return Ok(format!(
-            "File {} does not exist in Directory {}!",
-            file_path.display(),
-            directory
-        ));
+        if !crate::filesystem::path_exists(&file_path) {
+            crate::cprintln!(
+                "File {} does not exist in Directory!",
+                file_path.display().to_string().bright_red()
+            );
+            return Ok(format!(
+                "File {} does not exist in Directory {}!",
+                file_path.display(),
+                from
+            ));
+        }
+        if !crate::filesystem::is_file(&file_path) {
+            crate::cprintln!(
+                "{} is not a file!",
+                file_path.display().to_string().bright_red()
+            );
+            return Ok(format!("File {} is not a file!", file_path.display()));
+        }
+        selected_files.push(file_path);
+    } else {
+        // SELECT * FROM directory or SELECT dir FROM dir => selecting all files in the directory
+        if let Ok(entries) = std::fs::read_dir(&dir_path) {
+            for entry in entries.filter_map(|e| e.ok()) {
+                if entry.path().is_file() {
+                    selected_files.push(entry.path());
+                }
+            }
+        }
+        
+        // Sort alphabetically to be consistent
+        selected_files.sort();
     }
-    if !filesystem::is_file(&file_path) {
-        crate::cprintln!(
-            "{} is not a file!",
-            file_path.display().to_string().bright_red()
-        );
-        return Ok(format!("File {} is not a file!", file_path.display()));
+
+    if selected_files.is_empty() {
+        crate::cprintln!("No files selected.");
+        return Ok(String::from("No files selected"));
     }
-    sys_state.set_current_state(file_path.clone());
+
+    let num_files = selected_files.len();
+    sys_state.set_current_state(selected_files);
 
     crate::cprintln!(
-        "Selected STATE: {}",
-        file_path.display().to_string().green()
+        "Selected {} file(s) into STATE.",
+        num_files.to_string().green()
     );
-    return Ok(format!("Selected {}", file_path.display()));
+    return Ok(format!("Selected {} files", num_files));
 }
-pub fn execute_run_state(sys_state: &mut FileSystemState) -> Result<String, String> {
-    let file_path = match sys_state.get_current_state() {
-        Some(path) => path,
-        None => {
+
+pub fn execute_run_state(sys_state: &mut FileSystemState, app: Option<String>) -> Result<String, String> {
+    let file_paths = match sys_state.get_current_state() {
+        Some(paths) if !paths.is_empty() => paths.clone(),
+        _ => {
             crate::cprintln!(
                 "\nError: {}",
                 "No file selected. Use SELECT command first"
@@ -530,10 +557,16 @@ pub fn execute_run_state(sys_state: &mut FileSystemState) -> Result<String, Stri
             return Ok(String::from("No file selected. Use SELECT command first."));
         }
     };
-    execute_file(file_path).expect("Couldn't run file!");
-    return Ok(String::from("Running"));
+    
+    for file_path in file_paths {
+        if let Err(e) = execute_file(&file_path, &app) {
+            crate::cprintln!("Error running {}: {}", file_path.display(), e);
+        }
+    }
+    return Ok(String::from("Running files"));
 }
-pub fn execute_file(file_path: &PathBuf) -> Result<String, String> {
+
+pub fn execute_file(file_path: &PathBuf, app: &Option<String>) -> Result<String, String> {
     // Validate file still exists and is executable
     if !filesystem::path_exists(file_path) {
         crate::cprintln!(
@@ -546,7 +579,23 @@ pub fn execute_file(file_path: &PathBuf) -> Result<String, String> {
         ));
     }
 
-    if !filesystem::is_executable(file_path) {
+    if let Some(app_name) = app {
+        // Run with specified app
+        match std::process::Command::new(app_name).arg(file_path).spawn() {
+            Ok(_child) => {
+                crate::cprintln!("Running STATE: {} with {}", file_path.display().to_string().green(), app_name);
+                Ok(format!("Started: {} with {}", file_path.display(), app_name))
+            }
+            Err(e) => {
+                crate::cprintln!(
+                    "\nError: {} -> {}",
+                    format!("Failed to run STATE with {}", app_name).red().to_string(),
+                    e.to_string().red().to_string()
+                );
+                Ok(format!("Failed to run STATE: {}", e.to_string().red().to_string()))
+            }
+        }
+    } else if !filesystem::is_executable(file_path) {
         // For non-executable files, open with default application
         match open::that(file_path) {
             Ok(_) => {
@@ -595,22 +644,25 @@ pub fn execute_file(file_path: &PathBuf) -> Result<String, String> {
 
 pub fn execute_view_state(sys_state: &mut FileSystemState) -> Result<String, String> {
     let current_state = sys_state.get_current_state();
-    if current_state.is_none() {
-        crate::cprintln!("{}:\nState: None", "Current STATE".yellow());
+    if let Some(paths) = current_state {
+        if paths.is_empty() {
+            crate::cprintln!("{}:\nState: None", "Current STATE".yellow());
+        } else {
+            crate::cprintln!("{}:", "Current STATE".yellow());
+            for path in paths {
+                crate::cprintln!("- {}", path.display());
+            }
+        }
     } else {
-        crate::cprintln!(
-            "{}:\nState: {}",
-            "Current STATE".yellow(),
-            current_state.clone().unwrap().to_str().unwrap()
-        );
+        crate::cprintln!("{}:\nState: None", "Current STATE".yellow());
     }
-    return Ok(String::from("Executed View State!"));
+    return Ok(String::new());
 }
 
 pub fn execute_clear_state(sys_state: &mut FileSystemState) -> Result<String, String> {
     sys_state.clear_state();
     crate::cprintln!("{}", "STATE Dropped".yellow());
-    return Ok(String::from("Executed Clear State!"));
+    return Ok(String::new());
 }
 
 pub fn execute_watch_directory(
@@ -651,46 +703,64 @@ pub fn execute_watch_directory(
     Ok(format!("Changed to directory: {}", directory))
 }
 
-pub fn execute_list_directory(sys_state: &mut FileSystemState, show_hidden: bool) -> Result<String, String> {
+pub fn execute_list_directory(
+    sys_state: &mut FileSystemState,
+    show_hidden: bool,
+    detailed: bool,
+) -> Result<String, String> {
     let current_path = sys_state.get_current_path();
 
     if !is_dir(current_path) {
         return Err(String::from("Not a Directory"));
     } else {
-        use comfy_table::{Table, Cell, Color as CColor, Attribute};
-        use comfy_table::presets::UTF8_FULL;
         use chrono::{DateTime, Local};
-        use std::time::SystemTime;
+        use comfy_table::presets::UTF8_FULL;
+        use comfy_table::{Attribute, Cell, Color as CColor, Table};
+        #[cfg(unix)]
+        use std::os::unix::fs::PermissionsExt;
 
         let mut table = Table::new();
         table.load_preset(UTF8_FULL);
+        
         table.set_header(vec![
+            Cell::new("Perms").fg(CColor::Green).add_attribute(Attribute::Bold),
             Cell::new("Name").fg(CColor::Green).add_attribute(Attribute::Bold),
             Cell::new("Type").fg(CColor::Green).add_attribute(Attribute::Bold),
             Cell::new("Size").fg(CColor::Green).add_attribute(Attribute::Bold),
             Cell::new("Modified").fg(CColor::Green).add_attribute(Attribute::Bold),
         ]);
 
-        for entry in current_path
+        let mut entries: Vec<_> = current_path
             .read_dir()
             .expect("read_dir call failed")
             .filter_map(|e| e.ok())
-        {
-            let path = entry.path();
-            let name = path.file_name().unwrap_or_default().to_string_lossy();
+            .collect();
             
+        // Sort entries by name alphabetically
+        entries.sort_by(|a, b| {
+            a.path().file_name().cmp(&b.path().file_name())
+        });
+
+        for entry in entries {
+            let path = entry.path();
+            let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+
             if !show_hidden && name.starts_with('.') {
                 continue;
             }
-            
+
             let metadata = entry.metadata().ok();
-            
+
             let is_dir = path.is_dir();
             let file_type = if is_dir { "Dir" } else { "File" };
-            
+
             let name_color = if is_dir { CColor::Green } else { CColor::White };
-            let type_color = if is_dir { CColor::Green } else { CColor::DarkGrey };
-            
+            let type_color = if is_dir {
+                CColor::Green
+            } else {
+                CColor::DarkGrey
+            };
+
             let size = if let Some(m) = &metadata {
                 if is_dir {
                     "-".to_string()
@@ -712,17 +782,38 @@ pub fn execute_list_directory(sys_state: &mut FileSystemState, show_hidden: bool
                 "-".to_string()
             };
 
+            let perms_str = if let Some(m) = &metadata {
+                #[cfg(unix)]
+                {
+                    let mode = m.permissions().mode();
+                    let mut p = String::with_capacity(10);
+                    p.push(if is_dir { 'd' } else { '-' });
+                    let rwx = ["---", "--x", "-w-", "-wx", "r--", "r-x", "rw-", "rwx"];
+                    p.push_str(rwx[((mode >> 6) & 7) as usize]);
+                    p.push_str(rwx[((mode >> 3) & 7) as usize]);
+                    p.push_str(rwx[(mode & 7) as usize]);
+                    p
+                }
+                #[cfg(not(unix))]
+                {
+                    if m.permissions().readonly() { "r--".to_string() } else { "rw-".to_string() }
+                }
+            } else {
+                "???".to_string()
+            };
+
             table.add_row(vec![
+                Cell::new(perms_str).fg(CColor::DarkGrey),
                 Cell::new(name).fg(name_color),
                 Cell::new(file_type).fg(type_color),
                 Cell::new(size).fg(CColor::White),
                 Cell::new(modified).fg(CColor::DarkGrey),
             ]);
         }
-        
+
         crate::cprintln!("\n{}", table);
     }
-    return Ok(String::from("Executed: List Directory"));
+    return Ok(String::new());
 }
 
 fn execute_make_directory(
@@ -832,25 +923,32 @@ fn execute_rename_file(
 pub fn execute_meta_state(sys_state: &mut FileSystemState) -> Result<String, String> {
     let current_state = sys_state.get_current_state();
 
-    if current_state.is_none() {
+    if let Some(paths) = current_state {
+        if paths.is_empty() {
+            crate::cprintln!("Error: STATE is Empty!");
+            return Ok(String::from("STATE is Empty!"));
+        }
+        
+        crate::cprintln!("\n{}", "STATE Metadata:".yellow());
+        for path in paths {
+            if let Ok(metadata) = get_file_metadata(path) {
+                crate::cprintln!("--------------------------------");
+                crate::cprintln!("File Name: {}", path.display());
+                crate::cprintln!("File Size: {}", metadata.size);
+                if let Some(modified) = metadata.modified {
+                    crate::cprintln!("Last Modified: {:?}", modified);
+                }
+                crate::cprintln!("Read Only: {}", metadata.is_readonly);
+            } else {
+                crate::cprintln!("--------------------------------");
+                crate::cprintln!("Error: Failed to get metadata for {}", path.display());
+            }
+        }
+        crate::cprintln!("--------------------------------\n");
+        return Ok(String::new());
+    } else {
         crate::cprintln!("Error: STATE is Empty!");
         return Ok(String::from("STATE is Empty!"));
-    } else {
-        let metadata = get_file_metadata(current_state.as_ref().unwrap())
-            .expect("ERROR > Failed to get metadata");
-        crate::cprintln!(
-            "\nCurrent STATE: {}",
-            current_state.clone().unwrap().to_str().unwrap()
-        );
-        crate::cprintln!("\n{}", "STATE Metadata:".yellow());
-        crate::cprintln!(
-            "File Name: {}",
-            current_state.clone().unwrap().to_str().unwrap()
-        );
-        crate::cprintln!("File Size: {}", metadata.size.to_string());
-        crate::cprintln!("Last Modified: {:?}", metadata.modified.unwrap());
-        crate::cprintln!("Read Only: {}\n", metadata.is_readonly.to_string());
-        return Ok(String::from("Executed: STATE Metadata"));
     }
 }
 
@@ -971,10 +1069,10 @@ pub fn execute_fav_set(
 ) -> Result<String, String> {
     let current_state: PathBuf;
     match file_system_state.get_current_state().clone() {
-        Some(state) => {
-            current_state = state;
+        Some(states) if !states.is_empty() => {
+            current_state = states[0].clone(); // Just grab the first one for favorites
         }
-        None => {
+        _ => {
             crate::cprintln!(
                 "ERROR: {}",
                 "Couldn't get current STATE. STATE might be empty.".red()
@@ -1018,7 +1116,7 @@ fn execute_run_fav(
         .get_by_index(index)
         .expect("Couldn't get favorite");
 
-    execute_file(fav.get_path())
+    execute_file(fav.get_path(), &None)
 }
 
 fn execute_remove_fav(

@@ -23,10 +23,26 @@ pub enum Command {
         args: Vec<String>,
     },
     
+    // Pipelining Command
+    Pipe {
+        commands: Vec<Vec<String>>,
+        output_file: Option<String>,
+    },
+
     // Job Control Commands
     Jobs,
     Fg { id: u32 },
     Kill { id: u32 },
+
+    // Structured Pipeline Commands
+    Filter {
+        column: String,
+        operator: String,
+        value: String,
+    },
+    SelectFields {
+        fields: Vec<String>,
+    },
     
     // Environment Commands
     Export {
@@ -62,12 +78,14 @@ pub enum Command {
 
     // State Management Commands
     Select {
-        filename: String,
-        directory: String,
+        target: String,
+        from: String,
     },
     ViewState,
     ClearState,
-    RunState,
+    RunState {
+        app: Option<String>,
+    },
     MetaState,
 
     // Directory Management Commands
@@ -77,6 +95,7 @@ pub enum Command {
     },
     ListDirectory {
         show_hidden: bool,
+        detailed: bool,
     },
     ChangeDrive {
         drive: String,
@@ -125,20 +144,60 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
         return Err(String::from("Empty command"));
     }
     
-    // Try SQL Parser First
-    let dialect = sqlparser::dialect::GenericDialect {};
-    if sqlparser::parser::Parser::parse_sql(&dialect, input).is_ok() {
-        return Ok(Command::SqlQuery {
-            query: input.to_string(),
-        });
-    }
-
     let tokens = tokenize(input)?;
     if tokens.is_empty() {
         return Err(String::from("Empty command"));
     }
 
+    match tokens[0].to_uppercase().as_str() {
+        "KILL" | "JOBS" | "FG" => {
+            // Skip job control commands
+        }
+        "SELECT" => {
+            if tokens.iter().any(|t| t.to_uppercase() == "FROM") {
+                if tokens.len() == 4 && tokens[2].to_uppercase() == "FROM" {
+                    return Ok(Command::Select {
+                        target: tokens[1].clone(),
+                        from: tokens[3].clone(),
+                    });
+                } else {
+                    return Ok(Command::SqlQuery {
+                        query: input.to_string(),
+                    });
+                }
+            } else {
+                let mut fields = Vec::new();
+                for token in &tokens[1..] {
+                    for field in token.split(',') {
+                        let field = field.trim();
+                        if !field.is_empty() {
+                            fields.push(field.to_string());
+                        }
+                    }
+                }
+                return Ok(Command::SelectFields { fields });
+            }
+        }
+        "FILTER" | "WHERE" => {
+            if tokens.len() >= 4 {
+                let column = tokens[1].clone();
+                let operator = tokens[2].clone();
+                let value = tokens[3..].join(" ");
+                return Ok(Command::Filter { column, operator, value });
+            } else {
+                return Err("Syntax Error: FILTER <column> <operator> <value>".to_string());
+            }
+        }
+        "UPDATE" | "DELETE" | "INSERT" => {
+            return Ok(Command::SqlQuery {
+                query: input.to_string(),
+            });
+        }
+        _ => {}
+    }
+
     return match tokens[0].to_uppercase().as_str() {
+        "PIPE" => parse_pipe(&tokens),
         // Meta Commands
         "LC" | "LIST COMMANDS" => Ok(Command::ListCommands),
         "CLS" | "/C" | "CLEAR" => Ok(Command::ClearScreen),
@@ -268,7 +327,6 @@ pub fn parse_command(input: &str) -> Result<Command, String> {
         "RENFILE" => parse_rename_file(&tokens),
 
         // STATE Commands
-        "SELECT" => parse_select(&tokens),
         "VIEW" | "VS" => parse_view(&tokens),
         "DROP" | "DS" => parse_drop_state(&tokens),
         "RUN" | "RS" => parse_run(&tokens),
@@ -341,16 +399,24 @@ fn parse_watch_directory(tokens: &[String]) -> Result<Command, String> {
 
 fn parse_list_directory(tokens: &[String]) -> Result<Command, String> {
     let mut show_hidden = false;
+    let mut detailed = false;
     let base_cmd = tokens[0].to_uppercase();
     if base_cmd == "LA" || base_cmd == "LL" {
         show_hidden = true;
+        detailed = true;
     }
     for token in tokens.iter().skip(1) {
-        if token.starts_with('-') && token.to_lowercase().contains('a') {
-            show_hidden = true;
+        if token.starts_with('-') {
+            let lower = token.to_lowercase();
+            if lower.contains('a') {
+                show_hidden = true;
+            }
+            if lower.contains('l') {
+                detailed = true;
+            }
         }
     }
-    return Ok(Command::ListDirectory { show_hidden });
+    return Ok(Command::ListDirectory { show_hidden, detailed });
 }
 
 fn parse_make_directory(tokens: &[String]) -> Result<Command, String> {
@@ -425,19 +491,6 @@ fn parse_change_drive(tokens: &Vec<String>) -> Result<Command, String> {
         drive: tokens[1].to_uppercase(),
     });
 }
-fn parse_select(tokens: &[String]) -> Result<Command, String> {
-    if tokens.len() < 4 {
-        return Err("SELECT requires: SELECT \"Filename\" FROM \"Directory\""
-            .red()
-            .to_string());
-    }
-
-    Ok(Command::Select {
-        filename: parse_filename(tokens[1].clone()),
-        directory: tokens[3].clone(),
-    })
-}
-
 fn parse_view(tokens: &[String]) -> Result<Command, String> {
     if tokens.len() == 1 && tokens[0].to_uppercase() == "VS" {
         return Ok(Command::ViewState);
@@ -547,10 +600,11 @@ fn parse_run(tokens: &[String]) -> Result<Command, String> {
     // Pattern Matching based on Length of Tokens and First Token
     match (tokens.len(), tokens[0].to_uppercase().as_str()) {
         (2, "RUN") => match tokens[1].to_uppercase().as_str() {
-            "STATE" => Ok(Command::RunState),
+            "STATE" => Ok(Command::RunState { app: None }),
             _ => Err("Expected RUN STATE or RF".red().to_string()),
         },
         (3, "RUN") => match tokens[1].to_uppercase().as_str() {
+            "STATE" => Ok(Command::RunState { app: Some(tokens[2].clone()) }),
             "FAV" => Ok(Command::RunFav {
                 index: match tokens[2].parse::<usize>() {
                     Ok(idx) => idx,
@@ -565,7 +619,8 @@ fn parse_run(tokens: &[String]) -> Result<Command, String> {
             }),
             _ => Err("Expected RUN FAV <index> or RF <index>".red().to_string()),
         },
-        (1, "RS") => Ok(Command::RunState),
+        (1, "RS") => Ok(Command::RunState { app: None }),
+        (2, "RS") => Ok(Command::RunState { app: Some(tokens[1].clone()) }),
         (2, "RF") => Ok(Command::RunFav {
             index: match tokens[1].parse::<usize>() {
                 Ok(idx) => idx,
@@ -591,4 +646,57 @@ fn parse_unknown(tokens: &[String]) -> Result<Command, String> {
         command: tokens[0].clone(),
         args: tokens[1..].to_vec(),
     });
+}
+
+fn parse_pipe(tokens: &[String]) -> Result<Command, String> {
+    if tokens.len() < 2 {
+        return Err("Syntax Error: PIPE requires at least one command".to_string());
+    }
+
+    let mut commands = Vec::new();
+    let mut current_command = Vec::new();
+    let mut output_file = None;
+    let mut i = 1; // Skip "PIPE"
+
+    while i < tokens.len() {
+        match tokens[i].to_uppercase().as_str() {
+            "FEED" if i + 1 < tokens.len() && tokens[i+1].to_uppercase() == "TO" => {
+                if current_command.is_empty() {
+                    return Err("Syntax Error: Unexpected FEED TO without preceding command".to_string());
+                }
+                commands.push(current_command);
+                current_command = Vec::new();
+                i += 2; // Skip "FEED" and "TO"
+            }
+            "PUT" => {
+                if !current_command.is_empty() {
+                    commands.push(current_command);
+                    current_command = Vec::new();
+                }
+                if i + 1 < tokens.len() {
+                    output_file = Some(tokens[i+1].clone());
+                    if i + 2 < tokens.len() {
+                        return Err("Syntax Error: Unexpected tokens after PUT file".to_string());
+                    }
+                    break;
+                } else {
+                    return Err("Syntax Error: PUT requires a filename".to_string());
+                }
+            }
+            _ => {
+                current_command.push(tokens[i].clone());
+                i += 1;
+            }
+        }
+    }
+
+    if !current_command.is_empty() {
+        commands.push(current_command);
+    }
+
+    if commands.is_empty() {
+        return Err("Syntax Error: No commands found in PIPE".to_string());
+    }
+
+    Ok(Command::Pipe { commands, output_file })
 }

@@ -1,100 +1,86 @@
-use crate::file_system_state::FileSystemState;
+use rustyline::completion::{Completer, FilenameCompleter, Pair};
+use rustyline::hint::{Hinter, HistoryHinter};
+use rustyline::highlight::Highlighter;
+use rustyline::validate::{Validator, ValidationResult, ValidationContext};
+use rustyline::Helper;
+use rustyline::Context;
+use std::borrow::Cow;
 
-/// Returns a vector of all completions that match the given input prefix
-///
-/// # Arguments
-/// * `file_system_state` - Mutable reference to the file system state
-/// * `input` - The current input strings to match against
-///
-/// # Returns
-/// * `Vec<String>` - Vector of all matching completions
-
-pub fn completion_engine(file_system_state: &mut FileSystemState, input: &str) -> Vec<String> {
-    crate::indexer::index_current_directory(file_system_state);
-    let current_index = file_system_state.get_all_indexed();
-    let mut completions = Vec::new();
-
-    if input.is_empty() {
-        return completions;
-    }
-
-    // Extract the last word (the part we want to autocomplete)
-    let words: Vec<&str> = input.split_whitespace().collect();
-    let last_word = if input.ends_with(' ') {
-        "" // If input ends with space, we're starting a new word
-    } else {
-        words.last().unwrap_or(&"")
-    };
-
-    // Find completions for the last word only
-    for item in current_index {
-        if item.starts_with(last_word) {
-            completions.push(item.clone());
-        }
-    }
-
-    completions.sort();
-    completions
+pub struct Dir2Helper {
+    hinter: HistoryHinter,
+    completer: FilenameCompleter,
 }
 
-/// Alternative function that provides the best single completion (for tab completion)
-/// This maintains the original behavior for cases where you want auto-completion
-///
-/// # Arguments
-/// * `file_system_state` - Mutable reference to the file system state
-/// * `input` - Mutable reference to the input string to modify
-///
-/// # Returns
-/// * `bool` - Returns true if a completion was found and applied
-pub fn auto_complete_single(file_system_state: &mut FileSystemState, input: &mut String) -> bool {
-    let current_index = file_system_state.get_all_indexed();
-
-    for item in current_index {
-        if item.starts_with(input.as_str()) {
-            // Clear the input and replace with the completion
-            input.clear();
-            input.push_str(&item);
-            return true;
+impl Dir2Helper {
+    pub fn new() -> Self {
+        Self {
+            hinter: HistoryHinter {},
+            completer: FilenameCompleter::new(),
         }
     }
-
-    false
 }
 
-/// Gets the longest common prefix among all completions
-/// Useful for partial completion when multiple matches exist
-///
-/// # Arguments
-/// * `file_system_state` - Mutable reference to the file system state
-/// * `input` - The current input string to match against
-///
-/// # Returns
-/// * `String` - The longest common prefix among all matches
-pub fn get_common_prefix(file_system_state: &mut FileSystemState, input: &str) -> String {
-    let completions = completion_engine(file_system_state, input);
+impl Helper for Dir2Helper {}
 
-    if completions.is_empty() {
-        return input.to_string();
+impl Hinter for Dir2Helper {
+    type Hint = String;
+
+    fn hint(&self, line: &str, pos: usize, ctx: &Context<'_>) -> Option<String> {
+        self.hinter.hint(line, pos, ctx)
+    }
+}
+
+impl Highlighter for Dir2Helper {
+    fn highlight<'l>(&self, line: &'l str, pos: usize) -> Cow<'l, str> {
+        Cow::Borrowed(line)
     }
 
-    if completions.len() == 1 {
-        return completions[0].clone();
+    fn highlight_hint<'h>(&self, hint: &'h str) -> Cow<'h, str> {
+        Cow::Owned(format!("\x1b[90m{}\x1b[0m", hint))
     }
+}
 
-    // Find the longest common prefix among all completions
-    let first = &completions[0];
-    let mut common_prefix = String::new();
+impl Validator for Dir2Helper {
+    fn validate(&self, _ctx: &mut ValidationContext) -> rustyline::Result<ValidationResult> {
+        Ok(ValidationResult::Valid(None))
+    }
+}
 
-    for (i, ch) in first.chars().enumerate() {
-        // Check if this character exists at the same position in all completions
-        if completions.iter().all(|completion| {
-            completion.chars().nth(i) == Some(ch)
-        }) {
-            common_prefix.push(ch);
-        } else {
-            break;
+impl Completer for Dir2Helper {
+    type Candidate = Pair;
+
+    fn complete(
+        &self,
+        line: &str,
+        pos: usize,
+        ctx: &Context<'_>,
+    ) -> rustyline::Result<(usize, Vec<Pair>)> {
+        // First try to use the standard FilenameCompleter
+        let (start, mut matches) = self.completer.complete(line, pos, ctx)?;
+        
+        // Autocomplete internal DIR2 commands for the first word
+        if start == 0 {
+            let internal_commands = vec![
+                "CD ", "UP ", "WD ", "LD ", "DD ", "MKDIR ", "RMDIR ", "TOUCH ", "RM ",
+                "S ", "FAV ", "RF ", "SV ", "LS ", "DS ", "RS ",
+                "EXPORT ", "UNSET ", "ENV ", "ECHO ", "ALIAS ", "UNALIAS ", "ALIASES ",
+                "JOBS ", "FG ", "KILL ", "SELECT ", "LC ", "CLS ", "DOCS ", "EXIT ",
+                "PIPE "
+            ];
+            
+            let word = &line[start..pos];
+            let word_upper = word.to_uppercase();
+            
+            for cmd in internal_commands {
+                if cmd.starts_with(&word_upper) {
+                    matches.push(Pair {
+                        display: cmd.to_string(),
+                        replacement: cmd.to_string(),
+                    });
+                }
+            }
         }
+        
+        Ok((start, matches))
     }
-
-    common_prefix
 }

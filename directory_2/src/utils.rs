@@ -61,18 +61,16 @@ pub fn substitute_env_vars(input: &str) -> String {
 #[macro_export]
 macro_rules! cprintln {
     () => {
-        crate::utils::push_log("");
+        println!();
     };
     ($($arg:tt)*) => {{
-        let text = format!($($arg)*);
-        crate::utils::push_log(&text);
+        println!($($arg)*);
     }};
 }
 
 #[macro_export]
 macro_rules! cprint {
     ($($arg:tt)*) => {{
-        let text = format!($($arg)*);
-        crate::utils::push_log(&text);
+        print!($($arg)*);
     }};
 }

@@ -136,21 +136,37 @@ pub fn show_docs(command_name: Option<String>) -> Result<String, String> {
                 crate::cprintln!("Description: Lists all active aliases.");
                 crate::cprintln!("Usage: ALIASES");
             }
-            // TUI Config
-            "TUIADD" => {
-                crate::cprintln!("{}", "Command: TUIADD".blue().bold());
-                crate::cprintln!("Description: Adds a command to the interactive whitelist. Commands on this list will cleanly suspend the TUI so they can run fullscreen natively.");
-                crate::cprintln!("Usage: TUIADD <command>");
+            // Job Control
+            "JOBS" => {
+                crate::cprintln!("{}", "Command: JOBS".blue().bold());
+                crate::cprintln!("Description: Lists all active background jobs and their IDs.");
+                crate::cprintln!("Usage: JOBS");
             }
-            "TUIRM" => {
-                crate::cprintln!("{}", "Command: TUIRM".blue().bold());
-                crate::cprintln!("Description: Removes a command from the interactive whitelist.");
-                crate::cprintln!("Usage: TUIRM <command>");
+            "FG" => {
+                crate::cprintln!("{}", "Command: FG".blue().bold());
+                crate::cprintln!("Description: Brings a background job to the foreground so you can wait for its completion.");
+                crate::cprintln!("Usage: FG <id>");
             }
-            "TUILS" => {
-                crate::cprintln!("{}", "Command: TUILS".blue().bold());
-                crate::cprintln!("Description: Lists all commands that are whitelisted to run interactively outside the TUI.");
-                crate::cprintln!("Usage: TUILS");
+            "KILL" => {
+                crate::cprintln!("{}", "Command: KILL".blue().bold());
+                crate::cprintln!("Description: Terminates a running background job.");
+                crate::cprintln!("Usage: KILL <id>");
+            }
+            // State / Select Commands
+            "SELECT" => {
+                crate::cprintln!("{}", "Command: SELECT".yellow().bold());
+                crate::cprintln!("Description: Selects files or directories into the state buffer (piping model).");
+                crate::cprintln!("Usage:");
+                crate::cprintln!("  SELECT * FROM .           : Selects all files in current directory");
+                crate::cprintln!("  SELECT <file> FROM .      : Selects a specific file");
+            }
+            "PIPE" => {
+                crate::cprintln!("{}", "Command: PIPE".yellow().bold());
+                crate::cprintln!("Description: Creates a native execution pipeline to pass output from one command directly into another, optionally writing the final output to a file.");
+                crate::cprintln!("Usage: PIPE <cmd1> [FEED TO <cmd2>]... [PUT <file>]");
+                crate::cprintln!("Examples:");
+                crate::cprintln!("  PIPE ls -la FEED TO grep src");
+                crate::cprintln!("  PIPE cat data.txt FEED TO wc -l PUT count.txt");
             }
             // Meta Commands
             "LC" => {
@@ -160,7 +176,7 @@ pub fn show_docs(command_name: Option<String>) -> Result<String, String> {
             }
             "CLS" | "CLEAR" | "/C" => {
                 crate::cprintln!("{}", "Command: CLS / CLEAR".bright_blue().bold());
-                crate::cprintln!("Description: Clears the screen of all past output logs, while spawning a clickable [History] button in the header so you can restore them if needed.");
+                crate::cprintln!("Description: Clears the terminal screen.");
                 crate::cprintln!("Usage: CLS");
             }
             "DOCS" | "MAN" => {
@@ -184,10 +200,10 @@ pub fn show_docs(command_name: Option<String>) -> Result<String, String> {
         crate::cprintln!("{}", "              DIR2 COMPREHENSIVE MANUAL                  ".bright_cyan().bold());
         crate::cprintln!("{}", "=========================================================".bright_cyan());
         crate::cprintln!("\nWelcome to DIR2! DIR2 is an ultra-fast, modern shell replacement written in Rust.");
-        crate::cprintln!("It blends standard shell execution with a beautiful Ratatui-powered Terminal User Interface.");
+        crate::cprintln!("It provides a true shell experience with built-in commands and background task management.");
         crate::cprintln!("\n{} Native Execution", "[*]".bright_green());
-        crate::cprintln!("DIR2 automatically acts as a standard shell! If you type a command that is not built-in (like 'git status' or 'cargo build'), DIR2 executes it on your OS seamlessly and captures the output.");
-        crate::cprintln!("It even detects full-screen apps (like 'vim' or 'htop') and safely suspends the UI to run them!");
+        crate::cprintln!("DIR2 automatically acts as a standard shell! If you type a command that is not built-in (like 'git status' or 'cargo build'), DIR2 executes it on your OS seamlessly.");
+        crate::cprintln!("Interactive apps (like 'vim' or 'htop') run perfectly natively!");
         
         crate::cprintln!("\n{} Startup Scripts", "[*]".bright_green());
         crate::cprintln!("You can place commands, aliases, and exports inside {} in your home directory.", "~/.dir2rc".yellow());
@@ -197,10 +213,11 @@ pub fn show_docs(command_name: Option<String>) -> Result<String, String> {
         crate::cprintln!("  {} CD, UP, WD, LD, DD, MKDIR, RMDIR, TOUCH, RM", "Directory:".cyan());
         crate::cprintln!("  {} S", "Search:".cyan());
         crate::cprintln!("  {} FAV ADD, FAV LS, FAV RM, RF", "Favorites:".green());
-        crate::cprintln!("  {} SV, LS, DS, RS", "State:".yellow());
+        crate::cprintln!("  {} SELECT, SV, LS, DS, RS", "State:".yellow());
+        crate::cprintln!("  {} PIPE", "Pipelining:".yellow());
         crate::cprintln!("  {} EXPORT, UNSET, ENV, ECHO", "Environment:".magenta());
         crate::cprintln!("  {} ALIAS, UNALIAS, ALIASES", "Alias:".bright_green());
-        crate::cprintln!("  {} TUIADD, TUIRM, TUILS", "TUI Config:".blue());
+        crate::cprintln!("  {} JOBS, FG, KILL", "Job Control:".blue());
         crate::cprintln!("  {} LC, DOCS, CLS, EXIT", "Meta:".bright_blue());
         
         crate::cprintln!("\nFor detailed help on a specific command, type: {} {}", "DOCS".yellow(), "<command>".white());
